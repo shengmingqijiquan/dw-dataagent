@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+data/*.duckdb
+data/metadata/*.yaml
+.pytest_cache/
+.env

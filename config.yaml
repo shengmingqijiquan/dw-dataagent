@@ -1,0 +1,38 @@
+llm:
+  providers:
+    deepseek:
+      type: api
+      base_url: https://api.deepseek.com
+      model: deepseek-chat
+      api_key_env: DEEPSEEK_API_KEY
+    ollama_local:
+      type: local
+      base_url: http://localhost:11434
+      model: qwen3:8b
+  routing:
+    task_parse: deepseek
+    sql_generate: deepseek
+    critic_review: deepseek
+    fallback: ollama_local
+
+services:
+  mcp_server_url: http://localhost:8001/mcp/sse
+  milvus:
+    host: localhost
+    port: 19530
+    uri: data/milvus.db
+    collection: dw_sql_cases
+
+executor:
+  default: duckdb
+  starrocks:
+    host: localhost
+    port: 9030
+    user: root
+    password: ""
+
+observability:
+  langfuse:
+    public_key_env: LANGFUSE_PUBLIC_KEY
+    secret_key_env: LANGFUSE_SECRET_KEY
+    host: https://cloud.langfuse.com
