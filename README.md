@@ -46,6 +46,9 @@ python scripts/init_warehouse.py                 # DuckDB 引擎（默认，开�
 
 # 5. 构建 RAG 案例库（BGE Embedding + Milvus 入库）
 python scripts/build_rag_index.py
+#   —— 兜底：本机无 Docker 时自动降级 Milvus Lite（config.yaml services.milvus.uri
+#      指向本地文件 data/milvus.db，standalone 容器路径不变）；BGE 模型约 1.3GB，
+#      国内网络下可用镜像 `HF_ENDPOINT=https://hf-mirror.com python scripts/build_rag_index.py`
 
 # 6. 启动 MCP Server（SSE 服务）
 python -m dataagent.mcp_server.server --port 8001
