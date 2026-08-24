@@ -1,0 +1,302 @@
+# 历史取数案例库：需求 + SQL 配对（RAG 检索素材）
+# SQL 均为只读 SELECT；日期以 2026-07 为基准区间
+- id: c001
+  domain: 订单域
+  question: 各品类GMV Top10
+  sql: SELECT category_id, SUM(gmv_amount) AS gmv FROM dws_category_order_di WHERE dt >= '2026-07-01' GROUP BY category_id ORDER BY gmv DESC LIMIT 10
+  tables: [dws_category_order_di]
+  metrics: [GMV]
+- id: c002
+  domain: 订单域
+  question: 近30天各平台GMV按日趋势
+  sql: SELECT dt, platform, SUM(gmv_amount) AS gmv FROM dws_platform_order_di WHERE dt >= '2026-07-02' AND dt <= '2026-07-31' GROUP BY dt, platform ORDER BY dt
+  tables: [dws_platform_order_di]
+  metrics: [GMV]
+- id: c003
+  domain: 订单域
+  question: 近7天每日下单数与支付率
+  sql: SELECT dt, order_cnt, pay_order_cnt, pay_rate FROM dws_order_summary_di WHERE dt >= '2026-07-25' AND dt <= '2026-07-31' ORDER BY dt
+  tables: [dws_order_summary_di]
+  metrics: [支付率]
+- id: c004
+  domain: 订单域
+  question: 本月客单价变化趋势
+  sql: SELECT dt, avg_order_amount FROM ads_order_daily_report_di WHERE dt >= '2026-07-01' ORDER BY dt
+  tables: [ads_order_daily_report_di]
+  metrics: [客单价]
+- id: c005
+  domain: 订单域
+  question: 各平台下单用户数对比
+  sql: SELECT platform, COUNT(DISTINCT user_id) AS user_cnt FROM dwd_order_detail_di WHERE dt >= '2026-07-01' GROUP BY platform
+  tables: [dwd_order_detail_di]
+  metrics: []
+- id: c006
+  domain: 订单域
+  question: 退款订单的品类分布
+  sql: SELECT category_id, COUNT(*) AS refund_cnt FROM dwd_order_detail_di WHERE pay_status='refunded' AND dt >= '2026-07-01' GROUP BY category_id ORDER BY refund_cnt DESC
+  tables: [dwd_order_detail_di]
+  metrics: []
+- id: c007
+  domain: 订单域
+  question: 单日GMV超过100万的日期
+  sql: SELECT dt, gmv_amount FROM ads_order_daily_report_di WHERE gmv_amount > 1000000 AND dt >= '2026-07-01' ORDER BY gmv_amount DESC
+  tables: [ads_order_daily_report_di]
+  metrics: [GMV]
+- id: c008
+  domain: 订单域
+  question: 各品类订单量占比
+  sql: SELECT category_id, order_cnt, ROUND(order_cnt * 100.0 / SUM(order_cnt) OVER (), 2) AS pct FROM dws_category_order_di WHERE dt = '2026-07-31'
+  tables: [dws_category_order_di]
+  metrics: []
+- id: c009
+  domain: 订单域
+  question: 7月订单总量与GMV汇总
+  sql: SELECT SUM(order_cnt) AS total_orders, SUM(gmv_amount) AS total_gmv FROM dws_order_summary_di WHERE dt >= '2026-07-01' AND dt <= '2026-07-31'
+  tables: [dws_order_summary_di]
+  metrics: [GMV]
+- id: c010
+  domain: 订单域
+  question: 各平台订单转化率（支付订单/下单）
+  sql: SELECT platform, SUM(CASE WHEN pay_status IN ('paid','refunded') THEN 1 ELSE 0 END) * 1.0 / COUNT(*) AS conv_rate FROM dwd_order_detail_di WHERE dt >= '2026-07-01' GROUP BY platform
+  tables: [dwd_order_detail_di]
+  metrics: [支付率]
+- id: c011
+  domain: 用户域
+  question: 近30天DAU趋势
+  sql: SELECT dt, dau FROM dws_user_active_di WHERE dt >= '2026-07-02' AND dt <= '2026-07-31' ORDER BY dt
+  tables: [dws_user_active_di]
+  metrics: [DAU]
+- id: c012
+  domain: 用户域
+  question: 7月新增用户数按天统计
+  sql: SELECT dt, new_user_cnt FROM dws_user_active_di WHERE dt >= '2026-07-01' AND dt <= '2026-07-31' ORDER BY dt
+  tables: [dws_user_active_di]
+  metrics: [新增用户]
+- id: c013
+  domain: 用户域
+  question: 各注册渠道新增用户对比
+  sql: SELECT register_channel, COUNT(DISTINCT user_id) AS new_users FROM dwd_user_register_di WHERE dt >= '2026-07-01' GROUP BY register_channel ORDER BY new_users DESC
+  tables: [dwd_user_register_di]
+  metrics: [新增用户]
+- id: c014
+  domain: 用户域
+  question: 用户行为类型分布（view/cart/buy）
+  sql: SELECT behavior_type, SUM(behavior_cnt) AS cnt FROM dws_user_behavior_summary_di WHERE dt >= '2026-07-01' GROUP BY behavior_type ORDER BY cnt DESC
+  tables: [dws_user_behavior_summary_di]
+  metrics: []
+- id: c015
+  domain: 用户域
+  question: 最近一周次日留存率
+  sql: SELECT dt, retain_d1 FROM dws_user_retention_di WHERE dt >= '2026-07-25' AND dt <= '2026-07-31' ORDER BY dt
+  tables: [dws_user_retention_di]
+  metrics: [次日留存率]
+- id: c016
+  domain: 用户域
+  question: 各城市注册用户数 Top10
+  sql: SELECT city, COUNT(DISTINCT user_id) AS users FROM dwd_user_register_di WHERE dt >= '2026-07-01' GROUP BY city ORDER BY users DESC LIMIT 10
+  tables: [dwd_user_register_di]
+  metrics: []
+- id: c017
+  domain: 用户域
+  question: 7月用户增长日报（新增/活跃/留存）
+  sql: SELECT dt, new_user_cnt, active_user_cnt, retention_rate FROM ads_user_growth_report_di WHERE dt >= '2026-07-01' ORDER BY dt
+  tables: [ads_user_growth_report_di]
+  metrics: [次日留存率, 新增用户]
+- id: c018
+  domain: 用户域
+  question: 购物车行为用户数趋势
+  sql: SELECT dt, user_cnt FROM dws_user_behavior_summary_di WHERE behavior_type='cart' AND dt >= '2026-07-01' ORDER BY dt
+  tables: [dws_user_behavior_summary_di]
+  metrics: []
+- id: c019
+  domain: 用户域
+  question: 近7天活跃用户中新增用户占比
+  sql: SELECT dt, ROUND(new_user_cnt * 1.0 / active_user_cnt, 4) AS new_ratio FROM dws_user_active_di WHERE dt >= '2026-07-25' AND dt <= '2026-07-31'
+  tables: [dws_user_active_di]
+  metrics: [新增用户, DAU]
+- id: c020
+  domain: 用户域
+  question: 7月累计注册用户数
+  sql: SELECT COUNT(DISTINCT user_id) AS total_new FROM dwd_user_register_di WHERE dt >= '2026-07-01' AND dt <= '2026-07-31'
+  tables: [dwd_user_register_di]
+  metrics: [新增用户]
+- id: c021
+  domain: 商品域
+  question: 商品GMV Top20
+  sql: SELECT product_id, SUM(gmv_amount) AS gmv FROM dws_product_gmv_di WHERE dt >= '2026-07-01' GROUP BY product_id ORDER BY gmv DESC LIMIT 20
+  tables: [dws_product_gmv_di]
+  metrics: [GMV]
+- id: c022
+  domain: 商品域
+  question: 品类浏览热度排行
+  sql: SELECT c.category_name, SUM(v.view_cnt) AS views FROM dws_product_view_di v JOIN dim_product_info p ON v.product_id=p.product_id JOIN dim_category_info c ON p.category_id=c.category_id WHERE v.dt >= '2026-07-01' GROUP BY c.category_name ORDER BY views DESC
+  tables: [dws_product_view_di, dim_product_info, dim_category_info]
+  metrics: []
+- id: c023
+  domain: 商品域
+  question: 昨日商品GMV排名前50
+  sql: SELECT product_id, gmv_rank, gmv_amount FROM dws_product_gmv_di WHERE dt='2026-07-31' ORDER BY gmv_amount DESC LIMIT 50
+  tables: [dws_product_gmv_di]
+  metrics: [GMV]
+- id: c024
+  domain: 商品域
+  question: 品牌GMV汇总
+  sql: SELECT p.brand, SUM(g.gmv_amount) AS gmv FROM dws_product_gmv_di g JOIN dim_product_info p ON g.product_id=p.product_id WHERE g.dt >= '2026-07-01' GROUP BY p.brand ORDER BY gmv DESC
+  tables: [dws_product_gmv_di, dim_product_info]
+  metrics: [GMV]
+- id: c025
+  domain: 商品域
+  question: 浏览转购买率最高的商品
+  sql: SELECT g.product_id, g.pay_user_cnt * 1.0 / NULLIF(v.view_user_cnt,0) AS conv FROM dws_product_gmv_di g JOIN dws_product_view_di v ON g.product_id=v.product_id AND g.dt=v.dt WHERE g.dt='2026-07-31' ORDER BY conv DESC LIMIT 10
+  tables: [dws_product_gmv_di, dws_product_view_di]
+  metrics: []
+- id: c026
+  domain: 商品域
+  question: 各品类在售商品数
+  sql: SELECT c.category_name, COUNT(*) AS product_cnt FROM dim_product_info p JOIN dim_category_info c ON p.category_id=c.category_id WHERE p.status='on' GROUP BY c.category_name
+  tables: [dim_product_info, dim_category_info]
+  metrics: []
+- id: c027
+  domain: 商品域
+  question: 近30天浏览量趋势
+  sql: SELECT dt, SUM(view_cnt) AS views FROM dws_product_view_di WHERE dt >= '2026-07-02' AND dt <= '2026-07-31' GROUP BY dt ORDER BY dt
+  tables: [dws_product_view_di]
+  metrics: []
+- id: c028
+  domain: 商品域
+  question: 7月GMV最高的商品及其品牌
+  sql: SELECT p.product_id, p.product_name, p.brand, SUM(g.gmv_amount) AS gmv FROM dws_product_gmv_di g JOIN dim_product_info p ON g.product_id=p.product_id WHERE g.dt >= '2026-07-01' GROUP BY 1,2,3 ORDER BY gmv DESC LIMIT 10
+  tables: [dws_product_gmv_di, dim_product_info]
+  metrics: [GMV]
+- id: c029
+  domain: 商品域
+  question: 商品浏览量排名Top100
+  sql: SELECT product_id, view_rank FROM ads_product_ranking_di WHERE dt='2026-07-31' AND view_rank <= 100 ORDER BY view_rank
+  tables: [ads_product_ranking_di]
+  metrics: []
+- id: c030
+  domain: 商品域
+  question: 价格带商品销量分布
+  sql: SELECT CASE WHEN p.price < 100 THEN '0-100' WHEN p.price < 300 THEN '100-300' WHEN p.price < 600 THEN '300-600' ELSE '600+' END AS price_band, SUM(g.order_cnt) AS orders FROM dws_product_gmv_di g JOIN dim_product_info p ON g.product_id=p.product_id WHERE g.dt >= '2026-07-01' GROUP BY 1 ORDER BY orders DESC
+  tables: [dws_product_gmv_di, dim_product_info]
+  metrics: []
+- id: c031
+  domain: 支付域
+  question: 7月支付总额与订单数
+  sql: SELECT SUM(pay_amount) AS total, SUM(pay_order_cnt) AS orders FROM dws_payment_summary_di WHERE dt >= '2026-07-01' AND dt <= '2026-07-31'
+  tables: [dws_payment_summary_di]
+  metrics: []
+- id: c032
+  domain: 支付域
+  question: 各支付渠道金额占比
+  sql: SELECT pay_channel, SUM(pay_amount) AS amount, ROUND(SUM(pay_amount)*100.0/SUM(SUM(pay_amount)) OVER (),2) AS pct FROM dws_payment_channel_di WHERE dt >= '2026-07-01' GROUP BY pay_channel ORDER BY amount DESC
+  tables: [dws_payment_channel_di]
+  metrics: []
+- id: c033
+  domain: 支付域
+  question: 退款率趋势（近30天）
+  sql: SELECT p.dt, r.refund_amount, p.pay_amount, ROUND(r.refund_amount/p.pay_amount, 4) AS refund_rate FROM dws_payment_summary_di p JOIN dws_refund_summary_di r ON p.dt=r.dt WHERE p.dt >= '2026-07-02' ORDER BY p.dt
+  tables: [dws_payment_summary_di, dws_refund_summary_di]
+  metrics: [退款率]
+- id: c034
+  domain: 支付域
+  question: 支付失败订单明细数
+  sql: SELECT COUNT(*) AS failed_cnt FROM dwd_payment_detail_di WHERE pay_status='failed' AND dt >= '2026-07-01'
+  tables: [dwd_payment_detail_di]
+  metrics: []
+- id: c035
+  domain: 支付域
+  question: 各渠道支付用户数
+  sql: SELECT pay_channel, COUNT(DISTINCT user_id) AS users FROM dwd_payment_detail_di WHERE pay_status='success' AND dt >= '2026-07-01' GROUP BY pay_channel
+  tables: [dwd_payment_detail_di]
+  metrics: []
+- id: c036
+  domain: 支付域
+  question: 净支付额（支付-退款）日报
+  sql: SELECT dt, pay_amount, refund_amount, net_amount FROM ads_payment_daily_report_di WHERE dt >= '2026-07-01' ORDER BY dt
+  tables: [ads_payment_daily_report_di]
+  metrics: []
+- id: c037
+  domain: 支付域
+  question: 退款金额最高的10天
+  sql: SELECT dt, refund_amount FROM dws_refund_summary_di WHERE dt >= '2026-07-01' ORDER BY refund_amount DESC LIMIT 10
+  tables: [dws_refund_summary_di]
+  metrics: []
+- id: c038
+  domain: 支付域
+  question: 大额支付订单（>500元）数量
+  sql: SELECT COUNT(*) AS big_orders FROM dwd_payment_detail_di WHERE pay_amount > 500 AND pay_status='success' AND dt >= '2026-07-01'
+  tables: [dwd_payment_detail_di]
+  metrics: []
+- id: c039
+  domain: 支付域
+  question: 7月各渠道支付趋势（按周汇总）
+  sql: SELECT DATE_TRUNC('week', dt) AS week, pay_channel, SUM(pay_amount) AS amount FROM dws_payment_channel_di WHERE dt >= '2026-07-01' GROUP BY 1,2 ORDER BY 1
+  tables: [dws_payment_channel_di]
+  metrics: []
+- id: c040
+  domain: 支付域
+  question: 退款订单平均退款金额
+  sql: SELECT ROUND(AVG(refund_amount), 2) AS avg_refund FROM dwd_refund_detail_di WHERE dt >= '2026-07-01'
+  tables: [dwd_refund_detail_di]
+  metrics: []
+- id: c041
+  domain: 物流域
+  question: 7月发货与签收订单数
+  sql: SELECT SUM(ship_order_cnt) AS shipped, SUM(sign_order_cnt) AS signed FROM dws_logistics_summary_di WHERE dt >= '2026-07-01' AND dt <= '2026-07-31'
+  tables: [dws_logistics_summary_di]
+  metrics: []
+- id: c042
+  domain: 物流域
+  question: 各物流公司发货量对比
+  sql: SELECT logistics_company, SUM(ship_cnt) AS shipped FROM dws_logistics_company_di WHERE dt >= '2026-07-01' GROUP BY logistics_company ORDER BY shipped DESC
+  tables: [dws_logistics_company_di]
+  metrics: []
+- id: c043
+  domain: 物流域
+  question: 平均配送时长趋势
+  sql: SELECT dt, avg_delivery_days FROM dws_logistics_summary_di WHERE dt >= '2026-07-01' ORDER BY dt
+  tables: [dws_logistics_summary_di]
+  metrics: []
+- id: c044
+  domain: 物流域
+  question: 物流准时率日报
+  sql: SELECT dt, on_time_rate FROM ads_logistics_daily_report_di WHERE dt >= '2026-07-01' ORDER BY dt
+  tables: [ads_logistics_daily_report_di]
+  metrics: [履约准时率]
+- id: c045
+  domain: 物流域
+  question: 各仓库发货量
+  sql: SELECT warehouse_id, COUNT(*) AS shipped FROM dwd_logistics_shipped_di WHERE dt >= '2026-07-01' GROUP BY warehouse_id ORDER BY shipped DESC
+  tables: [dwd_logistics_shipped_di]
+  metrics: []
+- id: c046
+  domain: 物流域
+  question: 签收率（签收/发货）日报
+  sql: SELECT dt, ROUND(sign_order_cnt * 1.0 / ship_order_cnt, 4) AS sign_rate FROM dws_logistics_summary_di WHERE dt >= '2026-07-01'
+  tables: [dws_logistics_summary_di]
+  metrics: []
+- id: c047
+  domain: 物流域
+  question: 在途订单数（已发货未签收）
+  sql: SELECT COUNT(*) AS in_transit FROM dwd_logistics_tracking_di WHERE status='transit' AND dt >= '2026-07-01'
+  tables: [dwd_logistics_tracking_di]
+  metrics: []
+- id: c048
+  domain: 物流域
+  question: 各物流公司签收率对比
+  sql: SELECT logistics_company, ROUND(SUM(sign_cnt)*1.0/SUM(ship_cnt), 4) AS sign_rate FROM dws_logistics_company_di WHERE dt >= '2026-07-01' GROUP BY logistics_company
+  tables: [dws_logistics_company_di]
+  metrics: []
+- id: c049
+  domain: 订单域
+  question: 7月GMV最高的5个品类
+  sql: SELECT c.category_name, SUM(o.gmv_amount) AS gmv FROM dws_category_order_di o JOIN dim_category_info c ON o.category_id=c.category_id WHERE o.dt >= '2026-07-01' GROUP BY c.category_name ORDER BY gmv DESC LIMIT 5
+  tables: [dws_category_order_di, dim_category_info]
+  metrics: [GMV]
+- id: c050
+  domain: 订单域
+  question: 每日订单均价
+  sql: SELECT dt, ROUND(gmv_amount/pay_order_cnt, 2) AS avg_order FROM dws_order_summary_di WHERE dt >= '2026-07-01' ORDER BY dt
+  tables: [dws_order_summary_di]
+  metrics: [客单价]
