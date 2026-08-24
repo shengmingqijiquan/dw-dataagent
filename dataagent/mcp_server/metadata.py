@@ -50,6 +50,9 @@ def query_lineage(role: str, table_name: str) -> list[dict]:
         raise TableNotFoundError(table_name)
     result = []
     for e in LINEAGE:
+        # 边的两个端点都必须对角色可见，否则整条边隐藏（防跨域表名泄露）
+        if e.source not in visible or e.target not in visible:
+            continue
         if e.source == table_name:
             result.append({"direction": "downstream",
                            "source_table": e.source,

@@ -54,3 +54,17 @@ def test_metric_definition():
     assert m["metric_name"] == "GMV"
     assert "支付成功" in m["definition"]
     assert m["formula"]
+
+
+def test_lineage_hides_cross_domain_endpoints():
+    # finance_analyst 无商品域权限 → 跨域边 dwd_order_detail_di→dws_product_gmv_di 不返回
+    result = query_lineage("finance_analyst", "dwd_order_detail_di")
+    targets = {e["target_table"] for e in result if e["direction"] == "downstream"}
+    assert "dws_product_gmv_di" not in targets
+
+
+def test_lineage_cross_domain_visible_to_admin():
+    # admin 全可见 → 跨域边不被一刀切过滤
+    result = query_lineage("admin", "dwd_order_detail_di")
+    targets = {e["target_table"] for e in result if e["direction"] == "downstream"}
+    assert "dws_product_gmv_di" in targets
