@@ -31,7 +31,7 @@ _mcp_tools_cache: dict[str, list] = {}
 async def _load_mcp_tools(settings: Settings, role: str):
     """通过 langchain-mcp-adapters 从 SSE MCP Server 加载工具（按角色分键缓存）。
 
-    F1：SSE 连接头携带 x-user=role，MCP Server 端以此解析角色做权限过滤；
+    SSE 连接头携带 x-user=role，MCP Server 端以此解析角色做权限过滤；
     不同角色走不同连接/会话，故缓存按角色分键，避免角色上下文串用。
     """
     global _mcp_tools_cache
@@ -84,7 +84,7 @@ def build_agent(settings: Settings):
     async def collect_context_node(state: DWState) -> DWState:
         """工具调用循环：Agent 自主决定查哪些元数据/案例。
 
-        T13-①：MCP 不可达/工具调用异常时降级进状态机——generate 拿到显式
+        MCP 不可达/工具调用异常时降级进状态机——generate 拿到显式
         失败上下文继续，而不是未处理异常逃逸出图。
         """
         try:

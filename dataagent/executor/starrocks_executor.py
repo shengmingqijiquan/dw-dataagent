@@ -9,7 +9,7 @@ StarRocks FE 兼容 MySQL 协议，PyMySQL 是生产环境标准客户端之一
 权威**——StarRocks 侧创建仅授 SELECT 的只读账户/角色，Agent 以此身份连接，
 DML/DDL 在引擎层即被拒绝；代码侧的关键字前缀拦截只是纵深防御
 （best-effort，可被 `-- 注释` 前缀或 CTE 绕过），不构成安全边界，
-真正的 SQL 语义防线在上游 SQLGlot 规则校验（Task 12）。
+真正的 SQL 语义防线在上游 SQLGlot 规则校验。
 """
 import pymysql
 from dataagent.executor.base import QueryError
@@ -50,7 +50,7 @@ class StarRocksExecutor:
     def execute(self, sql: str) -> list[tuple]:
         # 纵深防御（非权威防线）：关键字前缀拦截，可被 `-- 注释`/CTE/分号多语句
         # （SELECT 1; DROP …）绕过，此处一并快速失败；只读的权威控制是引擎侧账户
-        # 授权（仅授 SELECT），上游另有 SQLGlot 规则校验（Task 12）。
+        # 授权（仅授 SELECT），上游另有 SQLGlot 规则校验。
         stripped = sql.strip().rstrip(";").upper()
         if ";" in stripped:
             raise QueryError("只读限制：不允许执行多语句 SQL（分号分隔）")

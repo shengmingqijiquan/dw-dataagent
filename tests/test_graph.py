@@ -14,7 +14,7 @@ def test_graph_has_all_nodes():
 
 
 def test_load_mcp_tools_sends_role_header_and_caches_per_role(monkeypatch):
-    # F1: MCP 连接头带 x-user=role，且缓存按角色分键（不同角色各占一条连接）
+    # MCP 连接头带 x-user=role，且缓存按角色分键（不同角色各占一条连接）
     captured = []
 
     class FakeClient:

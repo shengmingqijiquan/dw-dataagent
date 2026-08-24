@@ -1,6 +1,6 @@
 # dw-dataagent 设计文档
 
-> 版本：v3.0 | 2026-08-23 | 面试准备实操项目
+> 版本：v3.0 | 2026-08-23
 > v3.0 变更：对标生产环境——StarRocks 执行引擎 / MCP SSE 服务化 / Agent FastAPI 服务 / 表级权限 / Langfuse 全程可观测 / pytest
 
 ## 1. 项目定位与命名
@@ -9,9 +9,9 @@
 
 **一句话定位**：面向数仓取数场景的生产级 DataAgent 服务——自然语言需求 → 多步 Agent 推理 → 生成并执行 SQL → 返回可解释结果，全程可观测、可评测、可审计。
 
-**面试故事线**：
+**项目背景**：
 
-> 「我在做 AI 研发提效时意识到，业务取数需求是最高频场景。我设计并实现了一个生产级 DataAgent 服务：LangGraph 做 Agent 循环，MCP SSE 模式标准化接入元数据服务（含表级权限过滤），Milvus 支撑 RAG 检索历史 SQL 案例，模型路由层做成本与合规控制，四层校验保障 SQL 质量，StarRocks 执行真实 OLAP 查询，Langfuse 全程 Trace 可观测，Golden Set 驱动迭代。最终取数准确率达到 85%+。」
+> 业务取数需求是数仓团队最高频的场景。本项目设计并实现了一个生产级 DataAgent 服务：LangGraph 做 Agent 循环，MCP SSE 模式标准化接入元数据服务（含表级权限过滤），Milvus 支撑 RAG 检索历史 SQL 案例，模型路由层做成本与合规控制，四层校验保障 SQL 质量，StarRocks 执行真实 OLAP 查询，Langfuse 全程 Trace 可观测，Golden Set 驱动迭代。
 
 **成功标准**：
 
@@ -20,7 +20,7 @@
 | 服务闭环 | REST 接口输入需求 → 正确 SQL + 执行结果 |
 | 取数准确率 | Golden Set 30 条，准确率 ≥ 80% |
 | 生产要素 | 权限过滤/可观测/单测/服务化部署全部就位 |
-| 面试可用 | 每个组件都能讲清「为什么这么设计」 |
+| 设计清晰 | 每个组件都能讲清「为什么这么设计」 |
 
 ## 2. 技术架构与组件设计
 
@@ -71,7 +71,7 @@
 
 ### 2.2 六大组件职责与选型
 
-| 组件 | 职责 | 技术选型 | 选型理由（面试话术） |
+| 组件 | 职责 | 技术选型 | 选型理由 |
 |------|------|---------|-------------------|
 | **Agent 循环** | 多步推理编排 | LangGraph + Checkpoint | 显式状态管理，可暂停/恢复；生产级持久化 |
 | **模型路由** | 成本/合规控制 | Router + DeepSeek API + Ollama Qwen3 | Tiered Model Stack；生产私有化部署零改动 |
@@ -133,8 +133,8 @@ MCP 工具执行时按用户角色过滤返回结果：
   → 只返回其有权限的表，无权限表完全不可见（避免侧信道泄露）
 ```
 
-**面试话术**：
-> "生产 DataAgent 的第一道安全防线是权限过滤——不是 SQL 生成后拦截，而是元数据检索阶段就不可见。无权限的表对 Agent 来说'不存在'，从源头消除越权取数的可能。这对应大厂的 RBAC 数据权限模型。"
+**设计要点**：
+> 生产 DataAgent 的第一道安全防线是权限过滤——不是 SQL 生成后拦截，而是元数据检索阶段就不可见。无权限的表对 Agent 来说"不存在"，从源头消除越权取数的可能，对应主流数据平台的 RBAC 数据权限模型。
 
 ### 2.5 核心数据流
 
@@ -162,7 +162,7 @@ Embedding：sentence-transformers + BAAI/bge-large-zh-v1.5
 Rerank：BAAI/bge-reranker-v2-m3（加分项）
 执行引擎：StarRocks allin1 Docker（生产对齐）+ duckdb（兜底）
 校验：sqlglot
-可观测：langfuse（Langfuse Cloud 开发 / 自托管生产话术）
+可观测：langfuse（开发 Langfuse Cloud / 生产自托管）
 服务框架：FastAPI + uvicorn（Agent Service + MCP Server 双服务）
 测试：pytest
 部署：docker-compose 全栈编排 + Dockerfile
@@ -195,8 +195,8 @@ llm:
     fallback: ollama_local
 ```
 
-**面试话术**：
-> "模型路由层解决两个问题：成本和质量分层。同时它隔离了模型差异——生产环境因数据合规要求 vLLM 私有化部署 Qwen/DeepSeek 时，业务代码零改动，只改路由配置。这正是大厂模型网关的设计思路。"
+**设计要点**：
+> 模型路由层解决两个问题：成本和质量分层。同时它隔离了模型差异——生产环境因数据合规要求 vLLM 私有化部署 Qwen/DeepSeek 时，业务代码零改动，只改路由配置。这正是主流大厂模型网关的设计思路。
 
 ## 3. 开发计划与里程碑（8 天冲刺）
 
@@ -280,11 +280,11 @@ llm:
 1. 准确率优化至 ≥ 80%
 2. 全栈 docker-compose 编排收尾
 3. README 更新（架构图 + 准确率数据 + 成本数据）
-4. 简历条目 + 面试话术文档
+4. 文档收尾（README / 设计文档）
 
-**验收**：准确率 ≥ 80%；简历条目 + 面试话术就绪
+**验收**：准确率 ≥ 80%；文档收尾完成
 
-## 4. 关键设计决策（面试「为什么」速查）
+## 4. 关键设计决策（「为什么」速查）
 
 | 决策 | 理由 |
 |------|------|
@@ -306,18 +306,18 @@ llm:
 | BGE-large-zh 下载失败 | 降级 bge-small-zh |
 | Milvus Compose 资源不足 | 降级 Milvus Lite（API 兼容） |
 | DeepSeek API 不可用 | 切 Ollama Qwen3（config.yaml 一行切换） |
-| Ollama 内存不足 | 纯 API 方案，本地模型仅话术保留 |
+| Ollama 内存不足 | 纯 API 方案，本地模型仅作可选兜底 |
 | Rerank 模型太大 | 跳过，RRF 融合够用 |
 | 时间不足 | 砍 Rerank + 流式接口，保核心闭环 + 权限 + 可观测 |
 
-## 6. 技术栈对齐主流互联网企业（面试对答参考）
+## 6. 技术栈与主流生产实践对齐
 
-| 组件 | 字节/阿里/美团等主流做法 | 本项目 | 面试对答 |
+| 组件 | 主流生产实践 | 本项目 | 选型说明 |
 |------|------------------------|--------|---------|
-| LLM | 自研 + 开源私有化（vLLM 集群）+ 模型网关 | 路由层：DeepSeek API + Ollama Qwen3 | "生产因数据合规必须私有化，路由层支持无缝切换" |
-| 向量库 | Milvus / 自研（ByteStore、Proxima） | Milvus standalone | "国内生态最成熟，2.5+ 原生 BM25 省一套 ES" |
-| Agent | LangChain/LangGraph 或自研（字节 eino） | LangGraph | "通用标准，状态图模型可迁移自研框架" |
-| OLAP | StarRocks/ClickHouse/Doris | StarRocks + QueryExecutor 抽象 | "执行层接口化，引擎可替换" |
-| 元数据 | DataHub/Atlas/自研元数据中心 | MCP Server 对接 YAML 元数据仓库 | "MCP 工具接口不变，生产直接接 DataHub API" |
-| 数据安全 | RBAC 表级权限 + 脱敏 | 元数据层权限过滤 | "权限前置到元数据检索，从源头消除越权" |
-| 可观测 | Langfuse/自研平台 | Langfuse | "Trace + Token 成本 + 反馈闭环三位一体" |
+| LLM | 自研 + 开源私有化（vLLM 集群）+ 模型网关 | 路由层：DeepSeek API + Ollama Qwen3 | 生产因数据合规必须私有化，路由层支持无缝切换 |
+| 向量库 | Milvus / 自研向量存储 | Milvus standalone | 国内生态最成熟，2.5+ 原生 BM25 省一套 ES |
+| Agent | LangChain/LangGraph 或自研 | LangGraph | 通用标准，状态图模型可迁移自研框架 |
+| OLAP | StarRocks/ClickHouse/Doris | StarRocks + QueryExecutor 抽象 | 执行层接口化，引擎可替换 |
+| 元数据 | DataHub/Atlas/自研元数据中心 | MCP Server 对接 YAML 元数据仓库 | MCP 工具接口不变，生产直接接 DataHub API |
+| 数据安全 | RBAC 表级权限 + 脱敏 | 元数据层权限过滤 | 权限前置到元数据检索，从源头消除越权 |
+| 可观测 | Langfuse/自研平台 | Langfuse | Trace + Token 成本 + 反馈闭环三位一体 |

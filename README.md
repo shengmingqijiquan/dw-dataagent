@@ -6,15 +6,15 @@
 
 ## 项目定位
 
-这是面试准备实操项目，**技术选型与部署形态对标主流互联网企业（字节/阿里/美团系）的 AI 数据应用生产实践**，覆盖大厂 AI Data Agent 岗位面试的全部核心考点：
+这是一个面向数仓取数场景的生产级 DataAgent 示例项目，**技术选型与部署形态对齐主流互联网企业的 AI 数据应用生产实践**：
 
 > 本项目代码由 AI 辅助生成，人工负责架构设计、代码审查与测试。
 
-| 组件 | 技术 | 面试考点 |
+| 组件 | 技术 | 设计要点 |
 |------|------|---------|
 | Agent 循环 | LangGraph（ReAct + State + Checkpoint） | Agent 框架选型、状态管理、循环控制 |
 | Agent 服务 | FastAPI + SSE 流式接口 + Docker | 服务化部署、异步任务模式 |
-| 模型路由 | DeepSeek API + Ollama Qwen3（vLLM 生产叙事） | Tiered Model Stack、数据合规、成本控制 |
+| 模型路由 | DeepSeek API + Ollama Qwen3 | Tiered Model Stack、数据合规、成本控制 |
 | MCP Server | Python MCP SDK + SSE 服务化 | MCP 协议、工具标准化、服务化部署 |
 | 数据安全 | 角色 → 表级权限过滤（元数据层） | RBAC、数据合规、越权防护 |
 | RAG 案例库 | Milvus + BGE-large-zh + 混合检索 | 向量库选型、Embedding、检索策略 |
@@ -42,7 +42,7 @@ ollama pull qwen3:8b
 # 4. 初始化模拟数仓（建表 + 数据 + 元数据 + 权限）
 python scripts/init_warehouse.py                 # DuckDB 引擎（默认，开发兜底）
 # python scripts/init_warehouse.py --engine starrocks  # StarRocks 引擎（按需，需容器已启动）
-#   —— 注：StarRocks 容器验证待有条件环境（本机无 Docker 时跳过，DuckDB 兜底已验证）
+#   —— 注：需先启动 StarRocks 容器；无容器环境时使用 DuckDB 兜底（接口相同）
 
 # 5. 构建 RAG 案例库（BGE Embedding + Milvus 入库）
 python scripts/build_rag_index.py
@@ -169,12 +169,12 @@ dw-dataagent/
 | 数据集 | 30 条取数任务（`evals/golden_set.yaml`） |
 | 难度分层 | 简单聚合 12 / 多表 JOIN 8 / 口径 6 / 复杂嵌套 4（约 40%/27%/20%/13%） |
 | 判定标准 | 执行成功 + 预期表全部出现 + 预期 SQL 关键字出现 |
-| 主指标 | 要素准确率（XX%，待全量评测实测回填） |
-| 副指标 | 执行成功率（XX%，待全量评测实测回填） |
+| 主指标 | 要素准确率（执行成功 + 预期表全部出现 + 预期关键字出现） |
+| 副指标 | 执行成功率 |
 | 运行方式 | `python scripts/run_evals.py` |
 | 报告 | `evals/report.yaml`（总览 / 按难度分层 / 失败原因分类：校验失败、执行失败、要素缺失） |
 
-> 评测结果需在有 DeepSeek API Key 的环境执行全量评测后，从 `evals/report.yaml` 实测回填（见 `docs/resume-entry.md` 中对应的 XX% 占位）。
+> 评测结果随模型与运行环境而异，运行全量评测后从 `evals/report.yaml` 查看实测数据。
 
 ## 里程碑
 
@@ -187,4 +187,12 @@ dw-dataagent/
 | 5 | Agent 服务跑通闭环 | REST → SQL → StarRocks 结果 + Langfuse Trace |
 | 6 | 护栏就位 | 非法 SQL 100% 拦截 + 单测绿 |
 | 7 | Golden Set 评测 | 准确率可量化 |
-| 8 | 准确率 ≥ 80%（目标，待实测回填） | 30 条评测达标 + 简历条目就绪 |
+| 8 | 准确率 ≥ 80%（目标） | 30 条评测达标 + 文档收尾 |
+
+## 安全说明（生产部署前必读）
+
+本项目的服务接口与凭据默认值**仅面向本地演示**：
+
+- `/query` 与 MCP Server 默认**无鉴权**（MCP 信任 `x-user` 头解析角色），生产部署前必须接入认证与鉴权。
+- StarRocks 默认 `root` 空密码、MinIO 默认 `minioadmin/minioadmin`（见 `deploy/infra-compose.yml`），生产环境必须修改。
+- 所有密钥（`DEEPSEEK_API_KEY`、`LANGFUSE_PUBLIC_KEY`、`LANGFUSE_SECRET_KEY`）均通过环境变量注入，请勿写入 `config.yaml` 或提交到仓库。

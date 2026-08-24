@@ -32,7 +32,7 @@ def validate_sql(sql: str, role: str) -> ValidationResult:
         errors.append("只读限制: 仅允许 SELECT 查询")
 
     # 3. 表存在性 + 权限
-    # F2: CTE 别名不是真实表——收集 exp.CTE 别名并排除，避免 WITH 查询被判「表不存在」；
+    # CTE 别名不是真实表——收集 exp.CTE 别名并排除，避免 WITH 查询被判「表不存在」；
     # 分区检查（第 4 步）仍按表节点遍历，CTE 内层 DWD 表照常受作用域检查，不弱化
     cte_names = {c.alias.lower() for c in parsed.find_all(exp.CTE)}
     tables = {t.name for t in parsed.find_all(exp.Table)

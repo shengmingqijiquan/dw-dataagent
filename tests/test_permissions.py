@@ -36,7 +36,7 @@ def test_resolve_role_default():
 
 
 def test_resolve_role_passthrough_for_role_names():
-    # F1: MCP x-user 头已传角色名时直通，不再走用户→角色映射
+    # MCP x-user 头已传角色名时直通，不再走用户→角色映射
     assert resolve_role("data_analyst") == "data_analyst"
     assert resolve_role("finance_analyst") == "finance_analyst"
     assert resolve_role("ops_analyst") == "ops_analyst"

@@ -80,7 +80,7 @@ def test_subquery_with_partition_passes():
 
 
 def test_cte_query_over_registered_table_passes():
-    # F2: CTE 别名不是真实表，WITH 查询不应被判「表不存在: daily」
+    # CTE 别名不是真实表，WITH 查询不应被判「表不存在: daily」
     result = validate_sql(
         "WITH daily AS (SELECT dt, SUM(gmv_amount) AS gmv "
         "FROM dws_order_summary_di WHERE dt >= '2026-07-01' GROUP BY dt) "
@@ -89,7 +89,7 @@ def test_cte_query_over_registered_table_passes():
 
 
 def test_cte_name_not_reported_as_missing():
-    # F2: CTE 名被排除在表存在性检查外（含大小写差异的引用）
+    # CTE 名被排除在表存在性检查外（含大小写差异的引用）
     result = validate_sql(
         "WITH daily AS (SELECT COUNT(*) cnt FROM dwd_order_detail_di "
         "WHERE dt >= '2026-07-01') SELECT * FROM DAILY", "data_analyst")

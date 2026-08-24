@@ -29,7 +29,7 @@ def test_judge_sql_fails_on_missing_keyword():
 
 
 def test_judge_sql_keyword_not_matched_as_substring():
-    # M5(a): pay_order_cnt 不得满足预期关键字 order_cnt（词边界，T15-③ 回归）
+    # pay_order_cnt 不得满足预期关键字 order_cnt（词边界回归）
     sql = "SELECT pay_order_cnt FROM dws_order_summary_di WHERE dt >= '2026-07-01'"
     expected = {"tables": ["dws_order_summary_di"], "keywords": ["order_cnt"]}
     result = judge_sql(sql, expected)
