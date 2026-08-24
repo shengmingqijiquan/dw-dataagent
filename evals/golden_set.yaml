@@ -1,0 +1,212 @@
+# Golden Set：30 条取数任务（简单聚合 40% / 多表 JOIN 30% / 口径 20% / 复杂嵌套 10%）
+# 判定标准：执行成功 + 预期表全部出现 + 预期 SQL 关键字出现
+- id: g001
+  question: 7月各品类GMV汇总
+  role: data_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_category_order_di]
+    keywords: [SUM, gmv_amount, GROUP BY]
+- id: g002
+  question: 近30天每日下单数
+  role: data_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_order_summary_di]
+    keywords: [order_cnt, dt]
+- id: g003
+  question: 各平台支付订单数对比
+  role: data_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_platform_order_di]
+    keywords: [platform, order_cnt]
+- id: g004
+  question: 昨日商品浏览量Top10
+  role: data_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_product_view_di]
+    keywords: [view_cnt, ORDER BY, LIMIT]
+- id: g005
+  question: 7月新增用户总数
+  role: data_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_user_active_di]
+    keywords: [new_user_cnt, SUM]
+- id: g006
+  question: 各物流公司发货量统计
+  role: ops_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_logistics_company_di]
+    keywords: [logistics_company, ship_cnt]
+- id: g007
+  question: 近30天DAU趋势
+  role: data_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_user_active_di]
+    keywords: [dau, dt]
+- id: g008
+  question: 各注册渠道新增用户数
+  role: data_analyst
+  difficulty: simple
+  expected:
+    tables: [dwd_user_register_di]
+    keywords: [register_channel, COUNT]
+- id: g009
+  question: 7月支付总额
+  role: finance_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_payment_summary_di]
+    keywords: [pay_amount, SUM]
+- id: g010
+  question: 各品类订单量排名
+  role: data_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_category_order_di]
+    keywords: [category_id, order_cnt, ORDER BY]
+- id: g011
+  question: 7月退款金额最高的10天
+  role: finance_analyst
+  difficulty: simple
+  expected:
+    tables: [dws_refund_summary_di]
+    keywords: [refund_amount, ORDER BY, LIMIT]
+- id: g012
+  question: 物流准时率日报
+  role: ops_analyst
+  difficulty: simple
+  expected:
+    tables: [ads_logistics_daily_report_di]
+    keywords: [on_time_rate, dt]
+- id: g013
+  question: 品牌GMV排行（关联商品维度）
+  role: data_analyst
+  difficulty: join
+  expected:
+    tables: [dws_product_gmv_di, dim_product_info]
+    keywords: [brand, JOIN]
+- id: g014
+  question: 品类浏览热度排行（关联品类维度）
+  role: data_analyst
+  difficulty: join
+  expected:
+    tables: [dws_product_view_di, dim_product_info, dim_category_info]
+    keywords: [category_name, JOIN]
+- id: g015
+  question: 退款率趋势（支付与退款汇总关联）
+  role: finance_analyst
+  difficulty: join
+  expected:
+    tables: [dws_payment_summary_di, dws_refund_summary_di]
+    keywords: [refund_amount, pay_amount, JOIN]
+- id: g016
+  question: 商品浏览转购买率
+  role: data_analyst
+  difficulty: join
+  expected:
+    tables: [dws_product_gmv_di, dws_product_view_di]
+    keywords: [pay_user_cnt, view_user_cnt, JOIN]
+- id: g017
+  question: 各品类GMV Top5（关联品类名称）
+  role: data_analyst
+  difficulty: join
+  expected:
+    tables: [dws_category_order_di, dim_category_info]
+    keywords: [category_name, gmv_amount, JOIN]
+- id: g018
+  question: 商品GMV最高的商品及其品牌
+  role: data_analyst
+  difficulty: join
+  expected:
+    tables: [dws_product_gmv_di, dim_product_info]
+    keywords: [gmv_amount, brand, ORDER BY, LIMIT]
+- id: g019
+  question: 各城市注册用户Top10
+  role: data_analyst
+  difficulty: join
+  expected:
+    tables: [dwd_user_register_di]
+    keywords: [city, COUNT, GROUP BY]
+- id: g020
+  question: 各仓库发货量（关联仓库维度）
+  role: ops_analyst
+  difficulty: join
+  expected:
+    tables: [dwd_logistics_shipped_di, dim_warehouse_info]
+    keywords: [warehouse_name, JOIN]
+- id: g021
+  question: 近30天GMV日均值
+  role: data_analyst
+  difficulty: metric
+  expected:
+    tables: [dws_order_summary_di]
+    keywords: [gmv_amount, AVG]
+- id: g022
+  question: 7月支付率
+  role: data_analyst
+  difficulty: metric
+  expected:
+    tables: [dws_order_summary_di]
+    keywords: [pay_order_cnt, order_cnt]
+- id: g023
+  question: 客单价趋势
+  role: data_analyst
+  difficulty: metric
+  expected:
+    tables: [ads_order_daily_report_di]
+    keywords: [avg_order_amount, dt]
+- id: g024
+  question: 退款率（退款订单/支付订单）
+  role: finance_analyst
+  difficulty: metric
+  expected:
+    tables: [dws_payment_summary_di, dws_refund_summary_di]
+    keywords: [refund_order_cnt, pay_order_cnt]
+- id: g025
+  question: 次日留存率趋势
+  role: data_analyst
+  difficulty: metric
+  expected:
+    tables: [dws_user_retention_di]
+    keywords: [retain_d1, dt]
+- id: g026
+  question: 各品类GMV占比（窗口函数）
+  role: data_analyst
+  difficulty: metric
+  expected:
+    tables: [dws_category_order_di]
+    keywords: [OVER, gmv_amount]
+- id: g027
+  question: 支付成功率（成功笔数/总笔数）
+  role: finance_analyst
+  difficulty: complex
+  expected:
+    tables: [dwd_payment_detail_di]
+    keywords: [pay_status, CASE, COUNT]
+- id: g028
+  question: 各平台订单转化率（支付订单/下单）
+  role: data_analyst
+  difficulty: complex
+  expected:
+    tables: [dwd_order_detail_di]
+    keywords: [pay_status, CASE, platform]
+- id: g029
+  question: 价格带商品销量分布（关联商品维度 + 条件分桶）
+  role: data_analyst
+  difficulty: complex
+  expected:
+    tables: [dws_product_gmv_di, dim_product_info]
+    keywords: [price, CASE WHEN, JOIN]
+- id: g030
+  question: 每周GMV趋势（时间聚合 + 平台维度）
+  role: data_analyst
+  difficulty: complex
+  expected:
+    tables: [dws_platform_order_di]
+    keywords: [platform, gmv_amount, GROUP BY]
