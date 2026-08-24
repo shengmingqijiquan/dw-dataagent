@@ -46,9 +46,10 @@ python scripts/init_warehouse.py                 # DuckDB 引擎（默认，开�
 
 # 5. 构建 RAG 案例库（BGE Embedding + Milvus 入库）
 python scripts/build_rag_index.py
-#   —— 兜底：本机无 Docker 时自动降级 Milvus Lite（config.yaml services.milvus.uri
-#      指向本地文件 data/milvus.db，standalone 容器路径不变）；BGE 模型约 1.3GB，
-#      国内网络下可用镜像 `HF_ENDPOINT=https://hf-mirror.com python scripts/build_rag_index.py`
+#   —— 本机开发环境经 config.yaml services.milvus.uri 常驻使用 Milvus Lite
+#      （data/milvus.db）；生产可切换 Milvus standalone（deploy/infra-compose.yml）；
+#      BGE 模型约 1.3GB，国内网络下可用镜像
+#      `HF_ENDPOINT=https://hf-mirror.com python scripts/build_rag_index.py`
 
 # 6. 启动 MCP Server（SSE 服务）
 python -m dataagent.mcp_server.server --port 8001
@@ -120,6 +121,39 @@ dw-dataagent/
     └── eval_runner.py           # 评测执行器
 ```
 
+## 架构总览
+
+```
+业务调用方（Web/BI/IM 机器人）
+      │  HTTP/SSE（/query、/query/stream）
+      ▼
+┌───────────────────────────────────────────────────────────────┐
+│ Agent Service（FastAPI + Docker）                             │
+│                                                               │
+│   LangGraph Agent（ReAct + Checkpoint，State 显式管理）       │
+│   需求解析 → 元数据查询 → 案例检索 → SQL 生成 → 校验 → 执行   │
+│   （validate / critic 不通过 → 回 generate 重试，上限 2 次）  │
+│                                                               │
+│      │            │           │           │                   │
+│      ▼            ▼           ▼           ▼                   │
+│   模型路由层     MCP 客户端    RAG 案例库    护栏层           │
+│   DeepSeek      (SSE)        Milvus      SQLGlot              │
+│   +Ollama                    +BM25+RRF   +Critic              │
+└──────────────────────┬────────────────────────────────────────┘
+                       │ SSE
+                       ▼
+┌───────────────────────────────────────────────────────────────┐
+│ MCP Server（Python MCP SDK + SSE 服务化）                     │
+│ 4 个元数据工具 + RBAC 表级权限过滤（无权限表检索层不可见）    │
+│ 元数据仓库：tables / columns / lineage / metrics YAML         │
+│───────────────────────────────────────────────────────────────│
+│ 执行引擎：QueryExecutor 抽象                                  │
+│   StarRocks（生产对齐）/ DuckDB（开发兜底）                   │
+│───────────────────────────────────────────────────────────────│
+│ 可观测：Langfuse（全链路 Trace / Token 成本 / 反馈闭环）      │
+└───────────────────────────────────────────────────────────────┘
+```
+
 ## 核心闭环
 
 ```
@@ -127,6 +161,20 @@ dw-dataagent/
     → RAG 召回案例 → SQL 生成 → 规则校验 → Critic 审查
     → StarRocks 执行 → 结果 + 解释 → Langfuse Trace → 反馈回流
 ```
+
+## 评测（Golden Set）
+
+| 项目 | 内容 |
+|------|------|
+| 数据集 | 30 条取数任务（`evals/golden_set.yaml`） |
+| 难度分层 | 简单聚合 40% / 多表 JOIN 30% / 口径 20% / 复杂嵌套 10% |
+| 判定标准 | 执行成功 + 预期表全部出现 + 预期 SQL 关键字出现 |
+| 主指标 | 要素准确率（XX%，待全量评测实测回填） |
+| 副指标 | 执行成功率（XX%，待全量评测实测回填） |
+| 运行方式 | `python scripts/run_evals.py` |
+| 报告 | `evals/report.yaml`（总览 / 按难度分层 / 失败原因分类：校验失败、执行失败、要素缺失） |
+
+> 评测结果需在有 DeepSeek API Key 的环境执行全量评测后，从 `evals/report.yaml` 实测回填（见 `docs/resume-entry.md` 中对应的 XX% 占位）。
 
 ## 里程碑
 
@@ -139,4 +187,4 @@ dw-dataagent/
 | 5 | Agent 服务跑通闭环 | REST → SQL → StarRocks 结果 + Langfuse Trace |
 | 6 | 护栏就位 | 非法 SQL 100% 拦截 + 单测绿 |
 | 7 | Golden Set 评测 | 准确率可量化 |
-| 8 | 准确率 ≥ 80% | 30 条评测达标 + 简历条目就绪 |
+| 8 | 准确率 ≥ 80%（目标，待实测回填） | 30 条评测达标 + 简历条目就绪 |
