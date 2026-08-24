@@ -1,7 +1,8 @@
 """配置加载测试。"""
 import os
+import pytest
 import yaml
-from dataagent.config import load_config, Settings
+from dataagent.config import ConfigError, load_config, Settings
 
 
 def test_load_defaults_when_file_missing(tmp_path, monkeypatch):
@@ -30,3 +31,10 @@ def test_env_overrides_executor(tmp_path, monkeypatch):
     with open("config.yaml", "w", encoding="utf-8") as f:
         yaml.safe_dump({"executor": {"default": "starrocks"}}, f)
     assert load_config("config.yaml").executor.default == "duckdb"
+
+
+def test_malformed_yaml_raises_config_error(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config.yaml").write_text("llm: [unclosed\n", encoding="utf-8")
+    with pytest.raises(ConfigError, match="config.yaml"):
+        load_config("config.yaml")

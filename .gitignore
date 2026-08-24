@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 data/*.duckdb
+data/*.db
 data/metadata/*.yaml
 .pytest_cache/
 .env

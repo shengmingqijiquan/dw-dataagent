@@ -5,6 +5,10 @@ import os
 import yaml
 
 
+class ConfigError(Exception):
+    """配置加载失败。"""
+
+
 @dataclass
 class ProviderConfig:
     type: str                    # api | local
@@ -56,7 +60,10 @@ def load_config(path: str = "config.yaml") -> Settings:
     raw = {}
     if Path(path).exists():
         with open(path, encoding="utf-8") as f:
-            raw = yaml.safe_load(f) or {}
+            try:
+                raw = yaml.safe_load(f) or {}
+            except yaml.YAMLError as e:
+                raise ConfigError(f"配置文件解析失败: {path}: {e}") from e
 
     llm_raw = raw.get("llm", {})
     providers = {
