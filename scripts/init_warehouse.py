@@ -179,22 +179,9 @@ def build_fact_daily(executor):
 
         # 用户域
         new_users = rng.randint(800, 2000)
-        _insert(executor, "dws_user_active_di",
-                [(active_users, new_users, active_users, dt)])
-        for bt in ("view", "cart", "buy"):
-            _insert(executor, "dws_user_behavior_summary_di",
-                    [(bt, rng.randint(5_000, active_users),
-                      rng.randint(10_000, 200_000), dt)])
-        _insert(executor, "dws_user_retention_di",
-                [((d - timedelta(days=1)).isoformat(),
-                  round(rng.uniform(0.3, 0.5), 4),
-                  round(rng.uniform(0.15, 0.3), 4),
-                  round(rng.uniform(0.05, 0.15), 4), dt)])
-        _insert(executor, "ads_user_growth_report_di",
-                [(new_users, active_users,
-                  round(rng.uniform(0.3, 0.5), 4), dt)])
 
-        # dwd_user_behavior_di：行为明细（view/cart/buy）
+        # dwd_user_behavior_di：行为明细（view/cart/buy），先于 DWS 汇总生成，
+        # 供用户行为/活跃汇总真实聚合（评审 Fix 1：口径自洽）
         behavior_rows = []
         for _ in range(detail_rng.randint(20_000, 40_000)):
             behavior_rows.append((
@@ -204,6 +191,39 @@ def build_fact_daily(executor):
                 _time(d, detail_rng),
                 dt))
         _insert(executor, "dwd_user_behavior_di", behavior_rows)
+
+        # 用户行为/活跃 DWS 改为由 dwd_user_behavior_di 真实聚合推导
+        # （评审 Fix 1：原独立 randint 摘要与明细差 10 倍以上）。
+        # 保留原 6 次/日 rng 抽取（值弃用）以维持主随机流逐位不变，
+        # 订单/商品/支付/物流域已验证数字不受影响；纯聚合不消耗随机流。
+        for _ in range(3):
+            rng.randint(5_000, active_users)
+            rng.randint(10_000, 200_000)
+
+        behavior_agg = {}   # behavior_type -> [cnt, set(users)]
+        for r in behavior_rows:
+            b = behavior_agg.setdefault(r[1], [0, set()])
+            b[0] += 1
+            b[1].add(r[0])
+        # 全组合补 0：3 type × 90 天 = 270 行不变
+        for bt in ("view", "cart", "buy"):
+            cnt, users = behavior_agg.get(bt, [0, set()])
+            _insert(executor, "dws_user_behavior_summary_di",
+                    [(bt, len(users), cnt, dt)])
+
+        # dws_user_active_di：dau = 当日行为明细 distinct 用户数
+        dau = len({r[0] for r in behavior_rows})
+        _insert(executor, "dws_user_active_di",
+                [(active_users, new_users, dau, dt)])
+
+        _insert(executor, "dws_user_retention_di",
+                [((d - timedelta(days=1)).isoformat(),
+                  round(rng.uniform(0.3, 0.5), 4),
+                  round(rng.uniform(0.15, 0.3), 4),
+                  round(rng.uniform(0.05, 0.15), 4), dt)])
+        _insert(executor, "ads_user_growth_report_di",
+                [(new_users, active_users,
+                  round(rng.uniform(0.3, 0.5), 4), dt)])
 
         # dwd_user_register_di：注册明细（当日新增用户数）
         register_rows = []

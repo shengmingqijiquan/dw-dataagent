@@ -31,7 +31,9 @@ class StarRocksExecutor:
         """建库建表（30 张：27 张含 dt 日分区列 + 3 张 DIM 全量快照无 dt）。"""
         self._con = pymysql.connect(
             host=self.host, port=self.port,
-            user=self.user, password=self.password)
+            user=self.user, password=self.password,
+            autocommit=True)   # 关键：PyMySQL 默认 autocommit=False，
+                               # 指向真实 MySQL 协议服务器时 close() 会静默回滚全部写入
         cur = self._con.cursor()
         cur.execute(f"CREATE DATABASE IF NOT EXISTS {self.database}")
         cur.execute(f"USE {self.database}")
