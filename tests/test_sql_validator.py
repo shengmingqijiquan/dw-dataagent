@@ -49,3 +49,22 @@ def test_partition_filter_passes():
         "SELECT COUNT(*) FROM dwd_order_detail_di WHERE dt >= '2026-07-01'",
         "data_analyst")
     assert result.passed, result.errors
+
+
+def test_partition_like_column_name_rejected():
+    # dt_modified 含 dt 子串但不能替代分区字段 dt（精确列名匹配，R11 回归）
+    result = validate_sql(
+        "SELECT COUNT(*) FROM dwd_order_detail_di WHERE dt_modified >= '2026-07-01'",
+        "data_analyst")
+    assert not result.passed
+    assert any("分区" in e for e in result.errors)
+
+
+def test_union_branch_without_partition_rejected():
+    # UNION 第二分支不带分区过滤，不允许逃逸（全树 WHERE 覆盖，R11 回归）
+    result = validate_sql(
+        "SELECT COUNT(*) FROM dwd_order_detail_di WHERE dt >= '2026-07-01' "
+        "UNION ALL SELECT COUNT(*) FROM dwd_order_detail_di",
+        "data_analyst")
+    assert not result.passed
+    assert any("分区" in e for e in result.errors)

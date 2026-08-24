@@ -25,11 +25,11 @@ def validate_sql(sql: str, role: str) -> ValidationResult:
     try:
         parsed = sqlglot.parse_one(sql)
     except Exception:
-        return ValidationResult(False, [f"语法错误: 无法解析 SQL"])
+        return ValidationResult(False, ["语法错误: 无法解析 SQL"])
 
     # 2. 只读检查
     if not isinstance(parsed, (exp.Select, exp.Union)):
-        errors.append(f"只读限制: 仅允许 SELECT 查询")
+        errors.append("只读限制: 仅允许 SELECT 查询")
 
     # 3. 表存在性 + 权限
     tables = {t.name for t in parsed.find_all(exp.Table)}
@@ -40,20 +40,24 @@ def validate_sql(sql: str, role: str) -> ValidationResult:
         elif t not in visible:
             errors.append(f"无权限: {t}")
 
-    # 4. 分区检查：DWD 明细大表必须带分区过滤
+    # 4. 分区检查：DWD 明细大表必须带分区过滤（每个 SELECT 作用域都要有）
+    # 精确列名匹配（避免 dt_modified 等子串逃逸）；find_all 覆盖 UNION 各分支/子查询
     for t in tables:
         if t not in visible:
             continue
         spec = TABLES[t]
-        if spec.layer == "DWD":
-            where = parsed.find(exp.Where)
-            has_partition = (
-                where is not None
-                and spec.partition_col in
-                "".join(c.sql() for c in where.find_all(exp.Column))
-            )
-            if not has_partition:
+        if spec.layer != "DWD":
+            continue
+        for sel in parsed.find_all(exp.Select):
+            if t not in {x.name for x in sel.find_all(exp.Table)}:
+                continue
+            where = sel.args.get("where")
+            cols = set()
+            if where is not None:
+                cols = {c.name.lower() for c in where.find_all(exp.Column)}
+            if spec.partition_col.lower() not in cols:
                 errors.append(
                     f"分区检查: {t} 为 DWD 明细表，WHERE 必须包含分区字段 {spec.partition_col}")
+                break
 
     return ValidationResult(len(errors) == 0, errors)
