@@ -68,3 +68,12 @@ def test_union_branch_without_partition_rejected():
         "data_analyst")
     assert not result.passed
     assert any("分区" in e for e in result.errors)
+
+
+def test_subquery_with_partition_passes():
+    # 外层聚合套子查询：DWD 表在子查询内已带分区过滤，
+    # 校验只看表直接所在的最内层作用域，外层不得误报（R11a 回归）
+    result = validate_sql(
+        "SELECT SUM(cnt) FROM (SELECT COUNT(*) cnt FROM dwd_order_detail_di "
+        "WHERE dt >= '2026-07-01') t", "data_analyst")
+    assert result.passed, result.errors

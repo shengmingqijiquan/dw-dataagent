@@ -40,24 +40,23 @@ def validate_sql(sql: str, role: str) -> ValidationResult:
         elif t not in visible:
             errors.append(f"无权限: {t}")
 
-    # 4. 分区检查：DWD 明细大表必须带分区过滤（每个 SELECT 作用域都要有）
-    # 精确列名匹配（避免 dt_modified 等子串逃逸）；find_all 覆盖 UNION 各分支/子查询
-    for t in tables:
+    # 4. 分区检查：DWD 明细大表必须带分区过滤
+    # 按表节点判定：取每个 DWD 表直接所在的最内层 SELECT 作用域（find_ancestor），
+    # 精确列名匹配（避免 dt_modified 等子串逃逸）；UNION 各分支/子查询各查各的 WHERE
+    reported: set[str] = set()
+    for node in parsed.find_all(exp.Table):
+        t = node.name
         if t not in visible:
             continue
         spec = TABLES[t]
         if spec.layer != "DWD":
             continue
-        for sel in parsed.find_all(exp.Select):
-            if t not in {x.name for x in sel.find_all(exp.Table)}:
-                continue
-            where = sel.args.get("where")
-            cols = set()
-            if where is not None:
-                cols = {c.name.lower() for c in where.find_all(exp.Column)}
-            if spec.partition_col.lower() not in cols:
-                errors.append(
-                    f"分区检查: {t} 为 DWD 明细表，WHERE 必须包含分区字段 {spec.partition_col}")
-                break
+        sel = node.find_ancestor(exp.Select)
+        where = sel.args.get("where") if sel is not None else None
+        cols = {c.name.lower() for c in where.find_all(exp.Column)} if where is not None else set()
+        if spec.partition_col.lower() not in cols and t not in reported:
+            reported.add(t)
+            errors.append(
+                f"分区检查: {t} 为 DWD 明细表，WHERE 必须包含分区字段 {spec.partition_col}")
 
     return ValidationResult(len(errors) == 0, errors)
