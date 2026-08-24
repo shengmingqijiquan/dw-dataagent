@@ -23,6 +23,8 @@ class DuckDBExecutor:
         self._con.execute("PRAGMA enable_external_access=false")
 
     def execute(self, sql: str) -> list[tuple]:
+        # best-effort 关键字前缀拦截：可被 `-- 注释` 前缀或 CTE 绕过，
+        # 真正的只读防线在上游 SQLGlot 规则校验（Task 12）与引擎侧权限。
         stripped = sql.strip().rstrip(";").upper()
         if stripped.startswith(("DROP", "DELETE", "UPDATE", "CREATE", "ALTER", "TRUNCATE", "INSERT")):
             raise QueryError(f"只读限制：不允许执行 {stripped.split()[0]} 语句")
