@@ -5,4 +5,7 @@ data/*.duckdb
 data/*.db
 data/metadata/*.yaml
 .pytest_cache/
+.superpowers/
 .env
+
+data/*.duckdb.wal

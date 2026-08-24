@@ -8,6 +8,8 @@
 
 这是面试准备实操项目，**技术选型与部署形态对标主流互联网企业（字节/阿里/美团系）的 AI 数据应用生产实践**，覆盖大厂 AI Data Agent 岗位面试的全部核心考点：
 
+> 本项目代码由 AI 辅助生成，人工负责架构设计、代码审查与测试。
+
 | 组件 | 技术 | 面试考点 |
 |------|------|---------|
 | Agent 循环 | LangGraph（ReAct + State + Checkpoint） | Agent 框架选型、状态管理、循环控制 |
@@ -38,7 +40,9 @@ export DEEPSEEK_API_KEY="sk-xxx"
 ollama pull qwen3:8b
 
 # 4. 初始化模拟数仓（建表 + 数据 + 元数据 + 权限）
-python scripts/init_warehouse.py
+python scripts/init_warehouse.py                 # DuckDB 引擎（默认，开发兜底）
+# python scripts/init_warehouse.py --engine starrocks  # StarRocks 引擎（按需，需容器已启动）
+#   —— 注：StarRocks 容器验证待有条件环境（本机无 Docker 时跳过，DuckDB 兜底已验证）
 
 # 5. 构建 RAG 案例库（BGE Embedding + Milvus 入库）
 python scripts/build_rag_index.py
