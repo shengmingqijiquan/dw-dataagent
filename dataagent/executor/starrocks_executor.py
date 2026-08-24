@@ -48,10 +48,12 @@ class StarRocksExecutor:
         cur.close()
 
     def execute(self, sql: str) -> list[tuple]:
-        # 纵深防御（非权威防线）：关键字前缀拦截，可被 `-- 注释`/CTE 绕过；
-        # 只读的权威控制是引擎侧账户授权（仅授 SELECT），上游另有 SQLGlot
-        # 规则校验（Task 12），此处仅兜底快速失败。
+        # 纵深防御（非权威防线）：关键字前缀拦截，可被 `-- 注释`/CTE/分号多语句
+        # （SELECT 1; DROP …）绕过，此处一并快速失败；只读的权威控制是引擎侧账户
+        # 授权（仅授 SELECT），上游另有 SQLGlot 规则校验（Task 12）。
         stripped = sql.strip().rstrip(";").upper()
+        if ";" in stripped:
+            raise QueryError("只读限制：不允许执行多语句 SQL（分号分隔）")
         if stripped.startswith(("DROP", "DELETE", "UPDATE", "CREATE",
                                 "ALTER", "TRUNCATE", "INSERT")):
             raise QueryError(f"只读限制：不允许执行 {stripped.split()[0]} 语句")

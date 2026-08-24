@@ -40,3 +40,17 @@ def test_bad_sql_raises_query_error(executor):
 def test_ddl_restricted(executor):
     with pytest.raises(QueryError):
         executor.execute("DROP TABLE dim_category_info")
+
+
+def test_multi_statement_rejected(executor):
+    # M3: 分号多语句绕过关键字前缀检查（SELECT 1; DROP …），必须被拦
+    with pytest.raises(QueryError):
+        executor.execute("SELECT 1; DROP TABLE dim_category_info")
+    with pytest.raises(QueryError):
+        executor.execute("SELECT 1; SELECT 2")
+
+
+def test_trailing_semicolon_still_allowed(executor):
+    # 单条尾分号经 rstrip 归一后照常执行（不误伤）
+    rows = executor.execute("SELECT 1;")
+    assert rows == [(1,)]

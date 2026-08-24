@@ -25,23 +25,28 @@ from dataagent.warehouse.schema import TABLES
 MAX_GENERATE_ATTEMPTS = 2
 MAX_EXECUTE_ATTEMPTS = 2
 
-_mcp_tools_cache: list | None = None
+_mcp_tools_cache: dict[str, list] = {}
 
 
-async def _load_mcp_tools(settings: Settings):
-    """通过 langchain-mcp-adapters 从 SSE MCP Server 加载工具（缓存）。"""
+async def _load_mcp_tools(settings: Settings, role: str):
+    """通过 langchain-mcp-adapters 从 SSE MCP Server 加载工具（按角色分键缓存）。
+
+    F1：SSE 连接头携带 x-user=role，MCP Server 端以此解析角色做权限过滤；
+    不同角色走不同连接/会话，故缓存按角色分键，避免角色上下文串用。
+    """
     global _mcp_tools_cache
-    if _mcp_tools_cache is not None:
-        return _mcp_tools_cache
+    if role in _mcp_tools_cache:
+        return _mcp_tools_cache[role]
     from langchain_mcp_adapters.client import MultiServerMCPClient
     client = MultiServerMCPClient({
         "metadata": {
             "transport": "sse",
             "url": settings.mcp_server_url,
+            "headers": {"x-user": role},
         }
     })
-    _mcp_tools_cache = await client.get_tools()
-    return _mcp_tools_cache
+    _mcp_tools_cache[role] = await client.get_tools()
+    return _mcp_tools_cache[role]
 
 
 def build_agent(settings: Settings):
@@ -77,20 +82,27 @@ def build_agent(settings: Settings):
         return {"parsed": parsed}
 
     async def collect_context_node(state: DWState) -> DWState:
-        """工具调用循环：Agent 自主决定查哪些元数据/案例。"""
-        mcp_tools = await _load_mcp_tools(settings)
-        tools = mcp_tools + [search_cases]
-        from langgraph.prebuilt import create_react_agent
-        mini_agent = create_react_agent(router.get_model("sql_generate"), tools)
-        tool_names = "\n".join(f"- {t.name}: {t.description}" for t in tools)
-        task = (
-            f"用户需求: {state['question']}\n"
-            f"解析结果: {state['parsed']}\n\n"
-            f"可用工具:\n{tool_names}\n\n"
-            f"请查询生成该 SQL 所需的全部信息：涉及的候选表结构、指标口径、"
-            f"相似历史案例。用工具返回结果整理成上下文摘要（含表名、关键字段、"
-            f"口径定义、参考 SQL）。")
-        result = mini_agent.invoke({"messages": [HumanMessage(task)]})
+        """工具调用循环：Agent 自主决定查哪些元数据/案例。
+
+        T13-①：MCP 不可达/工具调用异常时降级进状态机——generate 拿到显式
+        失败上下文继续，而不是未处理异常逃逸出图。
+        """
+        try:
+            mcp_tools = await _load_mcp_tools(settings, state["role"])
+            tools = mcp_tools + [search_cases]
+            from langgraph.prebuilt import create_react_agent
+            mini_agent = create_react_agent(router.get_model("sql_generate"), tools)
+            tool_names = "\n".join(f"- {t.name}: {t.description}" for t in tools)
+            task = (
+                f"用户需求: {state['question']}\n"
+                f"解析结果: {state['parsed']}\n\n"
+                f"可用工具:\n{tool_names}\n\n"
+                f"请查询生成该 SQL 所需的全部信息：涉及的候选表结构、指标口径、"
+                f"相似历史案例。用工具返回结果整理成上下文摘要（含表名、关键字段、"
+                f"口径定义、参考 SQL）。")
+            result = mini_agent.invoke({"messages": [HumanMessage(task)]})
+        except Exception as e:
+            return {"context": f"上下文收集失败: {e}"}
         context = result["messages"][-1].content
         return {"context": context}
 
@@ -184,11 +196,13 @@ def build_agent(settings: Settings):
 
 
 def run_agent(question: str, role: str = "data_analyst",
-              settings: Settings | None = None) -> dict:
-    """同步便利入口。"""
+              settings: Settings | None = None,
+              agent=None) -> dict:
+    """同步便利入口。agent 可复用：多次调用传同一实例避免每 call 重建全图（M4）。"""
     import asyncio
     settings = settings or load_config()
-    agent = build_agent(settings)
+    if agent is None:
+        agent = build_agent(settings)
     state = asyncio.run(_invoke(agent, question, role))
     explanation = (f"SQL: {state.get('sql', '')}\n结果: {state.get('result', '')}")
     return {"sql": state.get("sql", ""), "result": state.get("result", ""),

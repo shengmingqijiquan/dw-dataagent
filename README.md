@@ -30,7 +30,7 @@
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 2. 基础设施（Milvus 向量库 + StarRocks OLAP）
+# 2. 基础设施（Milvus 向量库：etcd+minio+milvus standalone；StarRocks 按需单独启动，见 design.md §5 风险表）
 docker compose -f deploy/infra-compose.yml up -d
 
 # 3. LLM 配置（模型路由）
@@ -80,7 +80,7 @@ dw-dataagent/
 ├── docs/
 │   └── design.md                # 设计文档（架构/组件/开发计划）
 ├── deploy/
-│   └── infra-compose.yml        # Milvus(etcd+minio+milvus) + StarRocks
+│   └── infra-compose.yml        # Milvus(etcd+minio+milvus standalone)，StarRocks 按需单独启动
 ├── scripts/
 │   ├── init_warehouse.py        # 模拟数仓初始化（建表/数据/元数据/权限）
 │   ├── build_rag_index.py       # RAG 案例库构建
@@ -167,7 +167,7 @@ dw-dataagent/
 | 项目 | 内容 |
 |------|------|
 | 数据集 | 30 条取数任务（`evals/golden_set.yaml`） |
-| 难度分层 | 简单聚合 40% / 多表 JOIN 30% / 口径 20% / 复杂嵌套 10% |
+| 难度分层 | 简单聚合 12 / 多表 JOIN 8 / 口径 6 / 复杂嵌套 4（约 40%/27%/20%/13%） |
 | 判定标准 | 执行成功 + 预期表全部出现 + 预期 SQL 关键字出现 |
 | 主指标 | 要素准确率（XX%，待全量评测实测回填） |
 | 副指标 | 执行成功率（XX%，待全量评测实测回填） |

@@ -5,6 +5,7 @@
 - 要素准确率 = SQL 包含全部预期表与关键字且执行成功的比例（主指标）
 - 失败原因分类：校验失败 / 执行失败 / 要素缺失
 """
+import re
 import sys
 import time
 from pathlib import Path
@@ -13,7 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import yaml
 
-from dataagent.agent.graph import run_agent
+from dataagent.agent.graph import build_agent, run_agent
+from dataagent.config import load_config
 from dataagent.executor.duckdb_executor import DuckDBExecutor
 from dataagent.guardrails.sql_validator import validate_sql
 from dataagent.warehouse.schema import TABLES
@@ -24,12 +26,19 @@ def load_golden_set(path: str = "evals/golden_set.yaml") -> list[dict]:
 
 
 def judge_sql(sql: str, expected: dict) -> dict:
+    # M5: 表/关键字统一词边界正则匹配——空白归一 + 大小写不敏感，
+    # 消除子串误报（order_cnt ⊂ pay_order_cnt、dt 匹配任意含 dt 列）
+    sql_norm = re.sub(r"\s+", " ", sql)
     checks = []
     for t in expected.get("tables", []):
-        checks.append({"check": f"表 {t}", "ok": t in sql,
+        checks.append({"check": f"表 {t}",
+                       "ok": re.search(rf"\b{re.escape(t)}\b", sql_norm,
+                                       re.IGNORECASE) is not None,
                        "desc": f"SQL 使用了表 {t}"})
     for kw in expected.get("keywords", []):
-        checks.append({"check": f"关键字 {kw}", "ok": kw.lower() in sql.lower(),
+        checks.append({"check": f"关键字 {kw}",
+                       "ok": re.search(rf"\b{re.escape(kw)}\b", sql_norm,
+                                       re.IGNORECASE) is not None,
                        "desc": f"SQL 包含 {kw}"})
     passed = all(c["ok"] for c in checks)
     return {"passed": passed, "checks": checks}
@@ -54,11 +63,16 @@ def check_execution(sql: str, role: str) -> tuple[bool, str]:
 def run_all(golden_set_path: str = "evals/golden_set.yaml",
             report_path: str = "evals/report.yaml") -> dict:
     cases = load_golden_set(golden_set_path)
+    # M4: 全量评测只建一次 Agent（30 个用例复用同一实例，避免每 call 重建全图；
+    # MCP 工具连接按角色分键缓存，角色切换安全）。executor close 依赖 GC，遗留注记。
+    settings = load_config()
+    agent = build_agent(settings)
     results = []
     for case in cases:
         t0 = time.time()
         try:
-            agent_result = run_agent(case["question"], case["role"])
+            agent_result = run_agent(case["question"], case["role"],
+                                     settings=settings, agent=agent)
             sql = agent_result["sql"]
             exec_ok, exec_msg = check_execution(sql, case["role"])
             judge = judge_sql(sql, case["expected"])

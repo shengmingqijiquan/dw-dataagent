@@ -29,3 +29,9 @@ def test_select_without_setup_raises_query_error():
     # 未 setup 时 _con 为 None，SELECT 路径统一抛 QueryError 而非裸 AttributeError
     with pytest.raises(QueryError):
         _executor().execute("SELECT 1")
+
+
+def test_multi_statement_blocked_without_connection():
+    # M3: 分号多语句（SELECT 1; DROP …）在触碰连接之前拦截（纵深防御层）
+    with pytest.raises(QueryError):
+        _executor().execute("SELECT 1; DROP TABLE dim_category_info")

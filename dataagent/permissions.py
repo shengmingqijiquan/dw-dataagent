@@ -23,6 +23,10 @@ DEFAULT_ROLE = "data_analyst"
 
 
 def resolve_role(user: str) -> str:
+    # F1: 角色名直通——MCP x-user 头已传角色名（data_analyst 等）时不做用户映射，
+    # 避免把角色名当成新用户名而回落默认角色
+    if user in ROLES:
+        return user
     return _USER_ROLE_MAP.get(user, DEFAULT_ROLE)
 
 

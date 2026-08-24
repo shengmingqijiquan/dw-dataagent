@@ -1,5 +1,7 @@
 """RBAC 权限过滤测试。"""
-from dataagent.permissions import ROLES, filter_tables_by_role, resolve_role
+from dataagent.permissions import (
+    DEFAULT_ROLE, ROLES, filter_tables_by_role, resolve_role,
+)
 from dataagent.warehouse.schema import TABLES
 
 
@@ -31,3 +33,15 @@ def test_resolve_role_default():
     assert resolve_role("any_user") == "data_analyst"
     assert resolve_role("finance_wang") == "finance_analyst"
     assert resolve_role("admin_li") == "admin"
+
+
+def test_resolve_role_passthrough_for_role_names():
+    # F1: MCP x-user 头已传角色名时直通，不再走用户→角色映射
+    assert resolve_role("data_analyst") == "data_analyst"
+    assert resolve_role("finance_analyst") == "finance_analyst"
+    assert resolve_role("ops_analyst") == "ops_analyst"
+    assert resolve_role("admin") == "admin"
+
+
+def test_resolve_role_unknown_user_falls_back_to_default():
+    assert resolve_role("someone_else") == DEFAULT_ROLE

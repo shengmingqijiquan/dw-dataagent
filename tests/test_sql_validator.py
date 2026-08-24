@@ -77,3 +77,39 @@ def test_subquery_with_partition_passes():
         "SELECT SUM(cnt) FROM (SELECT COUNT(*) cnt FROM dwd_order_detail_di "
         "WHERE dt >= '2026-07-01') t", "data_analyst")
     assert result.passed, result.errors
+
+
+def test_cte_query_over_registered_table_passes():
+    # F2: CTE 别名不是真实表，WITH 查询不应被判「表不存在: daily」
+    result = validate_sql(
+        "WITH daily AS (SELECT dt, SUM(gmv_amount) AS gmv "
+        "FROM dws_order_summary_di WHERE dt >= '2026-07-01' GROUP BY dt) "
+        "SELECT * FROM daily", "data_analyst")
+    assert result.passed, result.errors
+
+
+def test_cte_name_not_reported_as_missing():
+    # F2: CTE 名被排除在表存在性检查外（含大小写差异的引用）
+    result = validate_sql(
+        "WITH daily AS (SELECT COUNT(*) cnt FROM dwd_order_detail_di "
+        "WHERE dt >= '2026-07-01') SELECT * FROM DAILY", "data_analyst")
+    assert result.passed, result.errors
+    assert not any("不存在" in e for e in result.errors)
+
+
+def test_cte_does_not_mask_unknown_real_table():
+    # F2 只排除 CTE 别名，CTE 内部引用的真实未知表仍必须拦截
+    result = validate_sql(
+        "WITH t AS (SELECT * FROM nonexistent_table) SELECT * FROM t",
+        "data_analyst")
+    assert not result.passed
+    assert any("不存在" in e for e in result.errors)
+
+
+def test_cte_inner_dwd_table_still_requires_partition():
+    # F2 不弱化分区检查：CTE 内层 DWD 表无 dt 过滤仍被拦（作用域=CTE 体 SELECT）
+    result = validate_sql(
+        "WITH t AS (SELECT COUNT(*) FROM dwd_order_detail_di) SELECT * FROM t",
+        "data_analyst")
+    assert not result.passed
+    assert any("分区" in e for e in result.errors)

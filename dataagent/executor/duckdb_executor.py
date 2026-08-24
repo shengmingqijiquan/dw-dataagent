@@ -24,8 +24,11 @@ class DuckDBExecutor:
 
     def execute(self, sql: str) -> list[tuple]:
         # best-effort 关键字前缀拦截：可被 `-- 注释` 前缀或 CTE 绕过，
+        # 分号多语句（SELECT 1; DROP …）绕过前缀检查，此处一并快速失败；
         # 真正的只读防线在上游 SQLGlot 规则校验（Task 12）与引擎侧权限。
         stripped = sql.strip().rstrip(";").upper()
+        if ";" in stripped:
+            raise QueryError("只读限制：不允许执行多语句 SQL（分号分隔）")
         if stripped.startswith(("DROP", "DELETE", "UPDATE", "CREATE", "ALTER", "TRUNCATE", "INSERT")):
             raise QueryError(f"只读限制：不允许执行 {stripped.split()[0]} 语句")
         try:

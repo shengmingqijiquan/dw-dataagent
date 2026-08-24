@@ -59,11 +59,16 @@ async def query(req: QueryRequest):
 @app.post("/query/stream")
 async def query_stream(req: QueryRequest):
     """SSE 流式返回（事件: done 携带最终 JSON）。"""
+    langfuse = get_langfuse_handler()
     async def event_stream():
+        # T14-①: 与 /query 一致挂载 langfuse handler，SSE 路径同样全程 Trace
+        config = {"configurable": {"thread_id": uuid4().hex}}
+        if langfuse:
+            config["callbacks"] = [langfuse]
         state = await _agent.ainvoke(
             {"question": req.question, "role": req.role,
              "generate_attempts": 0, "execute_attempts": 0},
-            config={"configurable": {"thread_id": uuid4().hex}})
+            config=config)
         payload = json.dumps({
             "sql": state.get("sql", ""),
             "result": state.get("result", ""),

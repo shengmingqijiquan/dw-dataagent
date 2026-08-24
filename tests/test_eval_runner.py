@@ -26,3 +26,28 @@ def test_judge_sql_fails_on_missing_keyword():
     expected = {"tables": ["dws_category_order_di"], "keywords": ["SUM"]}
     result = judge_sql(sql, expected)
     assert not result["passed"]
+
+
+def test_judge_sql_keyword_not_matched_as_substring():
+    # M5(a): pay_order_cnt 不得满足预期关键字 order_cnt（词边界，T15-③ 回归）
+    sql = "SELECT pay_order_cnt FROM dws_order_summary_di WHERE dt >= '2026-07-01'"
+    expected = {"tables": ["dws_order_summary_di"], "keywords": ["order_cnt"]}
+    result = judge_sql(sql, expected)
+    assert not result["passed"]
+
+
+def test_judge_sql_keyword_matches_across_newlines():
+    # M5(b): CASE\nWHEN 换行书写仍满足关键字 CASE WHEN（空白归一）
+    sql = ("SELECT CASE\nWHEN cnt > 10 THEN 'high' ELSE 'low' END "
+           "FROM dws_order_summary_di WHERE dt >= '2026-07-01'")
+    expected = {"tables": ["dws_order_summary_di"], "keywords": ["CASE WHEN"]}
+    result = judge_sql(sql, expected)
+    assert result["passed"], result
+
+
+def test_judge_sql_table_matches_different_case():
+    # M5(c): 表名大小写不同仍匹配（大小写不敏感）
+    sql = "SELECT * FROM DWS_CATEGORY_ORDER_DI"
+    expected = {"tables": ["dws_category_order_di"], "keywords": []}
+    result = judge_sql(sql, expected)
+    assert result["passed"], result
