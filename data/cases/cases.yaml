@@ -135,7 +135,7 @@
 - id: c023
   domain: 商品域
   question: 昨日商品GMV排名前50
-  sql: SELECT product_id, gmv_rank, gmv_amount FROM dws_product_gmv_di WHERE dt='2026-07-31' ORDER BY gmv_amount DESC LIMIT 50
+  sql: SELECT product_id, gmv_amount FROM dws_product_gmv_di WHERE dt='2026-07-31' ORDER BY gmv_amount DESC LIMIT 50
   tables: [dws_product_gmv_di]
   metrics: [GMV]
 - id: c024
