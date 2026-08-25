@@ -1,8 +1,11 @@
 # dw-dataagent · 数仓取数 DataAgent（生产级对标）
 
+**[English README](README_EN.md) · [设计文档](docs/design.md)**
+
 > 面向数仓取数场景的生产级 DataAgent 服务：自然语言需求 → 多步 Agent 推理 → 生成并执行 SQL → 返回可解释结果，全程可观测、可评测、可审计。
 >
 > **技术栈**：Python / LangGraph / MCP(SSE) / Milvus / BGE / StarRocks / SQLGlot / Langfuse / FastAPI
+> **Python 版本**：≥ 3.10（推荐 3.11+）
 
 ## 项目定位
 
@@ -26,54 +29,62 @@
 ## 快速开始
 
 ```bash
-# 1. Python 环境
+# 0. 前置依赖
+#    - Python ≥ 3.10（推荐 3.11+）
+#    - Docker + Docker Compose（infra 服务）
+#    - Docker Hub / 国内镜像网络畅通
+
+# 1. 克隆并安装依赖
+git clone <repo-url> && cd dw-dataagent
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 2. 基础设施（Milvus 向量库：etcd+minio+milvus standalone；StarRocks 按需单独启动，见 design.md §5 风险表）
+# 2. 复制环境变量模板并配置
+cp .env.example .env
+# 填写 .env 中的 DEEPSEEK_API_KEY（其他按需配置）
+
+# 3. 启动基础设施（Milvus 向量库：etcd+minio+milvus standalone）
 docker compose -f deploy/infra-compose.yml up -d
 
-# 3. LLM 配置（模型路由）
-#    A. DeepSeek API（开发主力）
-export DEEPSEEK_API_KEY="sk-xxx"
+# 4. LLM 配置（模型路由）
+#    A. DeepSeek API（开发主力）—— 在 .env 中设置 DEEPSEEK_API_KEY
 #    B. 本地 Ollama（数据不出域兜底）
 ollama pull qwen3:8b
 
-# 4. 初始化模拟数仓（建表 + 数据 + 元数据 + 权限）
+# 5. 初始化模拟数仓（建表 + 数据 + 元数据 + 权限）
 python scripts/init_warehouse.py                 # DuckDB 引擎（默认，开发兜底）
 # python scripts/init_warehouse.py --engine starrocks  # StarRocks 引擎（按需，需容器已启动）
 #   —— 注：需先启动 StarRocks 容器；无容器环境时使用 DuckDB 兜底（接口相同）
 
-# 5. 构建 RAG 案例库（BGE Embedding + Milvus 入库）
+# 6. 构建 RAG 案例库（BGE Embedding + Milvus 入库）
 python scripts/build_rag_index.py
 #   —— 本机开发环境经 config.yaml services.milvus.uri 常驻使用 Milvus Lite
 #      （data/milvus.db）；生产可切换 Milvus standalone（deploy/infra-compose.yml）；
 #      BGE 模型约 1.3GB，国内网络下可用镜像
 #      `HF_ENDPOINT=https://hf-mirror.com python scripts/build_rag_index.py`
 
-# 6. 启动 MCP Server（SSE 服务）
+# 7. 启动 MCP Server（SSE 服务）
 python -m dataagent.mcp_server.server --port 8001
 
-# 7. 启动 Agent Service（FastAPI）
+# 8. 启动 Agent Service（FastAPI）
 python -m dataagent.api --port 8000
 
-# 8. 调用取数接口
+# 9. 调用取数接口
 curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
   -d '{"question": "统计最近30天各品类GMV，按日趋势输出", "role": "data_analyst"}'
 
-# 9. 跑 Golden Set 评测
+# 10. 跑 Golden Set 评测
 python scripts/run_evals.py
-
-# 10. 跑单测
-pytest tests/
 ```
 
 ## 目录结构
 
 ```
 dw-dataagent/
-├── README.md                    # 本文档
+├── README.md                    # 本文档（中文）
+├── README_EN.md                 # 本文档（英文）
+├── .env.example                 # 环境变量模板
 ├── requirements.txt
 ├── config.yaml                  # 模型路由/服务地址/权限配置
 ├── Dockerfile                   # Agent Service 镜像
@@ -169,25 +180,12 @@ dw-dataagent/
 | 数据集 | 30 条取数任务（`evals/golden_set.yaml`） |
 | 难度分层 | 简单聚合 12 / 多表 JOIN 8 / 口径 6 / 复杂嵌套 4（约 40%/27%/20%/13%） |
 | 判定标准 | 执行成功 + 预期表全部出现 + 预期 SQL 关键字出现 |
-| 主指标 | 要素准确率（执行成功 + 预期表全部出现 + 预期关键字出现） |
-| 副指标 | 执行成功率 |
+| 主指标 | 要素准确率（详见 `evals/report.yaml`） |
+| 副指标 | 执行成功率（详见 `evals/report.yaml`） |
 | 运行方式 | `python scripts/run_evals.py` |
 | 报告 | `evals/report.yaml`（总览 / 按难度分层 / 失败原因分类：校验失败、执行失败、要素缺失） |
 
-> 评测结果随模型与运行环境而异，运行全量评测后从 `evals/report.yaml` 查看实测数据。
-
-## 里程碑
-
-| Day | 里程碑 | 验收标准 |
-|-----|--------|---------|
-| 1 | 基础设施 + 模拟数仓就绪 | StarRocks 30 张表 + 元数据 + 权限文件 |
-| 2 | MCP Server 服务化可用 | 4 工具 SSE 可调 + 权限过滤 + pytest 绿 |
-| 3 | RAG 案例库可用 | Milvus 50 条案例可检索 |
-| 4 | 混合检索完成 | 融合检索优于单一方式 |
-| 5 | Agent 服务跑通闭环 | REST → SQL → StarRocks 结果 + Langfuse Trace |
-| 6 | 护栏就位 | 非法 SQL 100% 拦截 + 单测绿 |
-| 7 | Golden Set 评测 | 准确率可量化 |
-| 8 | 准确率 ≥ 80%（目标） | 30 条评测达标 + 文档收尾 |
+> 运行 `python scripts/run_evals.py` 生成 `evals/report.yaml`，包含总览、按难度分层与失败原因分类。
 
 ## 安全说明（生产部署前必读）
 
@@ -196,3 +194,31 @@ dw-dataagent/
 - `/query` 与 MCP Server 默认**无鉴权**（MCP 信任 `x-user` 头解析角色），生产部署前必须接入认证与鉴权。
 - StarRocks 默认 `root` 空密码、MinIO 默认 `minioadmin/minioadmin`（见 `deploy/infra-compose.yml`），生产环境必须修改。
 - 所有密钥（`DEEPSEEK_API_KEY`、`LANGFUSE_PUBLIC_KEY`、`LANGFUSE_SECRET_KEY`）均通过环境变量注入，请勿写入 `config.yaml` 或提交到仓库。
+
+## 测试
+
+```bash
+# 运行全部单测
+pytest tests/
+
+# 运行单个测试文件
+pytest tests/test_executor.py
+
+# 运行单个测试函数
+pytest tests/test_executor.py::test_duckdb_execute
+
+# 带覆盖率（可选，需安装 coverage）
+pytest tests/ --cov=dataagent --cov-report=term-missing
+```
+
+## 常见问题（FAQ）
+
+| 问题 | 原因 | 解决方案 |
+|------|------|---------|
+| `HF_ENDPOINT` 未设置，BGE 模型下载失败 | HuggingFace 国内访问受限 | `export HF_ENDPOINT=https://hf-mirror.com` 后重试 |
+| Milvus 容器启动后端口不通 | etcd/minio 初始化未完成 | `docker compose -f deploy/infra-compose.yml logs -f` 等待就绪，通常需 30-60s |
+| `docker compose up` 报错磁盘不足 | Milvus + etcd + minio 占用较大 | 至少预留 5GB 磁盘空间；或用 Milvus Lite（仅 `milvus-lite` 包） |
+| StarRocks allin1 内存不足（OOM） | allin1 镜像约需 4GB+ | 改用 DuckDB 兜底：`DW_EXECUTOR=duckdb python scripts/init_warehouse.py` |
+| 启动 MCP Server 报 `ModuleNotFoundError` | 未激活虚拟环境 | `source .venv/bin/activate` 后重新执行 |
+| `pip install` 报错 `setuptools>=82` 与 `pymilvus` 不兼容 | pymilvus 内部 import pkg_resources | 安装要求已包含 `setuptools<82` 约束；如仍报错请手动 `pip install 'setuptools<82'` |
+| 跑评测时准确率远低于预期 | 评测依赖 LLM 质量 + DeepSeek API Key | 确保 `DEEPSEEK_API_KEY` 已正确配置；可切换 Ollama 本地模型（`config.yaml` 中修改 `routing`） |
