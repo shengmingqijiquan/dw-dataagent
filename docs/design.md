@@ -1,11 +1,11 @@
-# dw-nl2insight 设计文档
+# nl2insight 设计文档
 
 > 版本：v3.0 | 2026-08-23
 > v3.0 变更：对标生产环境——StarRocks 执行引擎 / MCP SSE 服务化 / Agent FastAPI 服务 / 表级权限 / Langfuse 全程可观测 / pytest
 
 ## 1. 项目定位与命名
 
-**项目名**：`dw-nl2insight`（数仓取数 DataAgent）
+**项目名**：`nl2insight`（数仓取数 DataAgent）
 
 **一句话定位**：面向数仓取数场景的生产级 DataAgent 服务——自然语言需求 → 多步 Agent 推理 → 生成并执行 SQL → 返回可解释结果，全程可观测、可评测、可审计。
 

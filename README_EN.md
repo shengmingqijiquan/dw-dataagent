@@ -1,7 +1,7 @@
 <div align="center">
 
 <p><a href="./README.md">中文</a> | English</p>
-<h1>dw-nl2insight</h1>
+<h1>nl2insight</h1>
 <p>
   <strong>A Production-Grade DataAgent for Data Warehouse Querying</strong>
 </p>
@@ -32,7 +32,7 @@
 
 ## 📖 Project Overview
 
-**dw-nl2insight** is a production-grade DataAgent service for data warehouse querying scenarios. It transforms natural language requests into executable SQL through multi-step Agent reasoning, RAG case retrieval, rule validation, and Critic review, finally executing on StarRocks (or DuckDB) and returning explainable analysis results.
+**nl2insight** is a production-grade DataAgent service for data warehouse querying scenarios. It transforms natural language requests into executable SQL through multi-step Agent reasoning, RAG case retrieval, rule validation, and Critic review, finally executing on StarRocks (or DuckDB) and returning explainable analysis results.
 
 The project aligns with mainstream AI data application production practices, covering **model routing, MCP service deployment, table-level RBAC permissions, dual-layer SQL guardrails, and full-link Langfuse tracing** — core production requirements.
 
@@ -97,7 +97,7 @@ Business caller (Web/BI/IM bot)
 
 ```bash
 # 1. Clone and install dependencies
-git clone <repo-url> && cd dw-nl2insight
+git clone <repo-url> && cd nl2insight
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
