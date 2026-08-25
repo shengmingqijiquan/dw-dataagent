@@ -11,14 +11,14 @@
 
 **项目背景**：
 
-> 业务取数需求是数仓团队最高频的场景。本项目设计并实现了一个生产级 NL-to-Insight Agent 服务：LangGraph 做 Agent 循环，MCP SSE 模式标准化接入元数据服务（含表级权限过滤），Milvus 支撑 RAG 检索历史 SQL 案例，模型路由层做成本与合规控制，四层校验保障 SQL 质量，StarRocks 执行真实 OLAP 查询，Langfuse 全程 Trace 可观测，Golden Set 驱动迭代。
+> 业务Insight需求是数仓团队最高频的场景。本项目设计并实现了一个生产级 NL-to-Insight Agent 服务：LangGraph 做 Agent 循环，MCP SSE 模式标准化接入元数据服务（含表级权限过滤），Milvus 支撑 RAG 检索历史 SQL 案例，模型路由层做成本与合规控制，四层校验保障 SQL 质量，StarRocks 执行真实 OLAP 查询，Langfuse 全程 Trace 可观测，Golden Set 驱动迭代。
 
 **成功标准**：
 
 | 标准 | 具体指标 |
 |------|---------|
 | 服务闭环 | REST 接口输入需求 → 正确 SQL + 执行结果 |
-| 取数准确率 | Golden Set 30 条，准确率 ≥ 80% |
+| Insight准确率 | Golden Set 30 条，准确率 ≥ 80% |
 | 生产要素 | 权限过滤/可观测/单测/服务化部署全部就位 |
 | 设计清晰 | 每个组件都能讲清「为什么这么设计」 |
 
@@ -33,12 +33,12 @@
                            ↓ HTTP/SSE
 ┌────────────────────────────────────────────────────────────┐
 │            Agent Service（FastAPI + Docker）                 │
-│  ├─ POST /query          同步取数接口                        │
+│  ├─ POST /query          同步Insight接口                        │
 │  ├─ POST /query/stream   SSE 流式接口（思考过程可见）          │
 │  └─ GET  /health         健康检查                            │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │         LangGraph Agent（ReAct 循环 + Checkpoint）      │  │
-│  │  需求解析 → 元数据查询 → 案例检索 → SQL生成 → 校验 → 执行  │  │
+│  │  需求解析 → 元数据查询 → 案例检索 → 语义层注入 → SQL生成 → 校验 → 执行 → 数据洞察  │  │
 │  └──────────────────────────────────────────────────────┘  │
 │        ↓              ↓            ↓             ↓         │
 │  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
@@ -134,21 +134,22 @@ MCP 工具执行时按用户角色过滤返回结果：
 ```
 
 **设计要点**：
-> 生产 DataAgent 的第一道安全防线是权限过滤——不是 SQL 生成后拦截，而是元数据检索阶段就不可见。无权限的表对 Agent 来说"不存在"，从源头消除越权取数的可能，对应主流数据平台的 RBAC 数据权限模型。
+> 生产 DataAgent 的第一道安全防线是权限过滤——不是 SQL 生成后拦截，而是元数据检索阶段就不可见。无权限的表对 Agent 来说"不存在"，从源头消除越权获取数据的可能，对应主流数据平台的 RBAC 数据权限模型。
 
 ### 2.5 核心数据流
 
 ```
 1. 用户（携带角色）提交："统计最近30天各品类GMV，按日趋势输出"
-2. Agent 需求解析（Router → 小模型）→ 取数场景、订单域、GMV指标、日粒度
+2. Agent 需求解析（Router → 小模型）→ Insight场景、订单域、GMV指标、日粒度
 3. Agent 调 MCP query_table_schema → 返回权限内候选表结构
 4. Agent 调 MCP query_metric_definition("GMV") → 口径定义
 5. Agent 调 RAG search_cases → Milvus 混合检索召回相似历史 SQL（2-3 条）
-6. Agent 生成 SQL（Router → 主力模型：表结构 + 口径 + 案例）
-7. 规则引擎校验：语法 ✓ 表存在性 ✓ 分区 ✓ 命名 ✓ 只读 ✓ 权限内表 ✓
-8. Critic LLM 审查：JOIN 合理性、聚合逻辑、口径一致性
-9. StarRocks 执行 → 返回结果 + 解释（用了哪些表、什么口径、Token 成本）
-10. Langfuse 记录全链路 Trace；用户反馈回流 → Golden Set 更新
+6. 语义层注入：从 parsed.metrics 自动查询指标口径定义，附加到上下文
+7. Agent 生成 SQL（Router → 主力模型：表结构 + 口径 + 案例）
+8. 规则引擎校验：语法 ✓ 表存在性 ✓ 分区 ✓ 命名 ✓ 只读 ✓ 权限内表 ✓
+9. Critic LLM 审查：JOIN 合理性、聚合逻辑、口径一致性
+10. StarRocks 执行 → 返回结果 + 解释（用了哪些表、什么口径、Token 成本）
+11. Langfuse 记录全链路 Trace；用户反馈回流 → Golden Set 更新
 ```
 
 ### 2.6 技术栈清单
@@ -250,7 +251,7 @@ llm:
 4. `nl2insight/llm/router.py` 模型路由
 5. **Langfuse 集成**：每个节点 Trace + Token 统计
 6. **FastAPI 服务**：POST /query + SSE 流式接口 + Dockerfile
-7. 跑通首条取数需求
+7. 跑通首条Insight需求
 
 **验收**：REST 接口 → SQL → StarRocks 执行结果完整闭环；Langfuse 可见 Trace
 
@@ -268,7 +269,7 @@ llm:
 ### Day 7：Golden Set + Evals
 
 **任务**：
-1. `evals/golden_set.yaml`：30 条取数任务（简单聚合 40% / 多表 JOIN 30% / 口径 20% / 复杂嵌套 10%）
+1. `evals/golden_set.yaml`：30 条Insight任务（简单聚合 40% / 多表 JOIN 30% / 口径 20% / 复杂嵌套 10%）
 2. `evals/eval_runner.py`：执行成功率 + 关键要素准确率 + 失败原因分类
 3. 基于失败原因迭代
 

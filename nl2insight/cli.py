@@ -5,8 +5,8 @@ from nl2insight.agent.graph import run_agent
 
 
 def main():
-    parser = argparse.ArgumentParser(description="数仓取数 DataAgent")
-    parser.add_argument("question", help="自然语言取数需求")
+    parser = argparse.ArgumentParser(description="nl2insight: NL-to-Insight Agent")
+    parser.add_argument("question", help="自然语言需求")
     parser.add_argument("--role", default="data_analyst",
                         choices=["data_analyst", "finance_analyst",
                                  "ops_analyst", "admin"])

@@ -1,4 +1,4 @@
-"""LangGraph Agent 状态图：parse → tool loop → generate ⇄ validate → execute。
+"""LangGraph Agent 状态图：parse → tool loop → generate ⇄ validate → execute → insight。
 
 生产对标：状态机护栏——parse/generate 等节点各有确定的工具权限，
 校验失败回到 generate（最多 2 次），执行失败同样受限重试。
@@ -11,7 +11,7 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
-from nl2insight.agent.prompts import GENERATE_PROMPT, PARSE_PROMPT, CRITIC_PROMPT
+from nl2insight.agent.prompts import GENERATE_PROMPT, INSIGHT_PROMPT, PARSE_PROMPT, CRITIC_PROMPT
 from nl2insight.agent.state import DWState
 from nl2insight.config import Settings, load_config
 from nl2insight.executor.base import QueryError
@@ -19,6 +19,7 @@ from nl2insight.executor.duckdb_executor import DuckDBExecutor
 from nl2insight.executor.starrocks_executor import StarRocksExecutor
 from nl2insight.guardrails.sql_validator import validate_sql
 from nl2insight.llm.router import LLMRouter
+from nl2insight.mcp_server.metadata import query_metric_definition
 from nl2insight.rag.retriever import HybridRetriever
 from nl2insight.warehouse.schema import TABLES
 
@@ -64,9 +65,20 @@ def build_agent(settings: Settings):
 
     @tool
     def search_cases(question: str) -> str:
-        """检索相似的历史取数案例。当需要参考类似需求的 SQL 写法时使用。"""
+        """检索相似的历史案例。当需要参考类似需求的 SQL 写法时使用。"""
         hits = retriever.search(question, top_k=3)
         return json.dumps(hits, ensure_ascii=False, indent=2)
+
+    @tool
+    def query_metrics(metric_names: str) -> str:
+        """查询语义层指标定义。输入逗号分隔的指标名，返回口径定义和计算逻辑。
+
+        例如："GMV, DAU, 客单价" → 返回各指标的定义和 formula。
+        当用户需求中提及指标名但不确定如何计算时使用。
+        """
+        names = [n.strip() for n in metric_names.split(",") if n.strip()]
+        results = [query_metric_definition(n) for n in names]
+        return json.dumps(results, ensure_ascii=False, indent=2)
 
     def parse_node(state: DWState) -> DWState:
         model = router.get_model("task_parse")
@@ -82,14 +94,27 @@ def build_agent(settings: Settings):
         return {"parsed": parsed}
 
     async def collect_context_node(state: DWState) -> DWState:
-        """工具调用循环：Agent 自主决定查哪些元数据/案例。
+        """工具调用循环：Agent 自主决定查哪些元数据/案例/语义层。
 
+        从 parse 结果自动 enrich 语义层（指标口径），
         MCP 不可达/工具调用异常时降级进状态机——generate 拿到显式
         失败上下文继续，而不是未处理异常逃逸出图。
         """
+        # 从 parsed.metrics 自动查询语义层，无论 Agent 是否显式调用
+        metric_names = [m for m in (state.get("parsed") or {}).get("metrics", []) if m]
+        metric_context = ""
+        if metric_names:
+            metrics_info = "\n".join(
+                f"- {query_metric_definition(m)['metric_name']}: "
+                f"定义={query_metric_definition(m)['definition']}, "
+                f"计算={query_metric_definition(m)['formula']}"
+                for m in metric_names
+            )
+            metric_context = f"\n## 语义层（指标口径）\n{metrics_info}\n"
+
         try:
             mcp_tools = await _load_mcp_tools(settings, state["role"])
-            tools = mcp_tools + [search_cases]
+            tools = mcp_tools + [search_cases, query_metrics]
             from langgraph.prebuilt import create_react_agent
             mini_agent = create_react_agent(router.get_model("sql_generate"), tools)
             tool_names = "\n".join(f"- {t.name}: {t.description}" for t in tools)
@@ -99,11 +124,16 @@ def build_agent(settings: Settings):
                 f"可用工具:\n{tool_names}\n\n"
                 f"请查询生成该 SQL 所需的全部信息：涉及的候选表结构、指标口径、"
                 f"相似历史案例。用工具返回结果整理成上下文摘要（含表名、关键字段、"
-                f"口径定义、参考 SQL）。")
+                f"口径定义、参考 SQL）。"
+                f"注意：semantic layer 已提供指标口径上下文，生成 SQL 时优先遵循。"
+            )
             result = mini_agent.invoke({"messages": [HumanMessage(task)]})
         except Exception as e:
             return {"context": f"上下文收集失败: {e}"}
         context = result["messages"][-1].content
+        # 将自动 enrich 的语义层追加到上下文末尾，确保 generate 节点可见
+        if metric_context:
+            context = f"{context}\n{metric_context}"
         return {"context": context}
 
     def generate_node(state: DWState) -> DWState:
@@ -147,6 +177,26 @@ def build_agent(settings: Settings):
         return {"result": f"执行成功，共 {len(rows)} 行。前 20 行:\n{preview}",
                 "execute_attempts": state.get("execute_attempts", 0)}
 
+    def insight_node(state: DWState) -> DWState:
+        """基于执行结果生成数据洞察（自然语言解读）。"""
+        model = router.get_model("sql_generate")
+        result_text = state.get("result", "")
+        # 提取行数，用于判断是否有数据
+        match = re.search(r"共 (\d+) 行", result_text)
+        if not match or int(match.group(1)) == 0:
+            return {"insight": "执行结果无数据返回。"}
+        raw = model.invoke([
+            HumanMessage(INSIGHT_PROMPT.format(
+                question=state["question"],
+                sql=state.get("sql", ""),
+                result=result_text,
+                context=state.get("context", ""),
+            )),
+        ]).content
+        # 清理可能的 Markdown 标记
+        insight = re.sub(r"```.*?```", "", raw).strip()
+        return {"insight": insight}
+
     def route_after_validate(state: DWState) -> str:
         if state.get("validation_errors"):
             if state.get("generate_attempts", 0) < MAX_GENERATE_ATTEMPTS:
@@ -166,7 +216,7 @@ def build_agent(settings: Settings):
             if state.get("execute_attempts", 0) < MAX_EXECUTE_ATTEMPTS:
                 return "generate"
             return "fail"
-        return "done"
+        return "insight"
 
     workflow = StateGraph(DWState)
     workflow.add_node("parse", parse_node)
@@ -175,6 +225,7 @@ def build_agent(settings: Settings):
     workflow.add_node("validate", validate_node)
     workflow.add_node("critic", critic_node)
     workflow.add_node("execute", execute_node)
+    workflow.add_node("insight", insight_node)
     workflow.add_node("fail", lambda s: {"result": "流程失败: 重试次数用尽"})
 
     workflow.set_entry_point("parse")
@@ -189,7 +240,8 @@ def build_agent(settings: Settings):
         {"generate": "generate", "execute": "execute", "fail": "fail"})
     workflow.add_conditional_edges(
         "execute", route_after_execute,
-        {"generate": "generate", "done": END, "fail": "fail"})
+        {"generate": "generate", "insight": "insight", "fail": "fail"})
+    workflow.add_edge("insight", END)
     workflow.add_edge("fail", END)
 
     return workflow.compile(checkpointer=MemorySaver())
@@ -204,9 +256,16 @@ def run_agent(question: str, role: str = "data_analyst",
     if agent is None:
         agent = build_agent(settings)
     state = asyncio.run(_invoke(agent, question, role))
-    explanation = (f"SQL: {state.get('sql', '')}\n结果: {state.get('result', '')}")
-    return {"sql": state.get("sql", ""), "result": state.get("result", ""),
-            "explanation": explanation}
+    return {
+        "sql": state.get("sql", ""),
+        "result": state.get("result", ""),
+        "insight": state.get("insight", ""),
+        "explanation": (
+            f"SQL: {state.get('sql', '')}\n"
+            f"结果: {state.get('result', '')}\n"
+            f"洞察: {state.get('insight', '')}"
+        ),
+    }
 
 
 async def _invoke(agent, question: str, role: str) -> dict:

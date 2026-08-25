@@ -30,6 +30,7 @@ class QueryRequest(BaseModel):
 class QueryResponse(BaseModel):
     sql: str
     result: str
+    insight: str
     explanation: str
 
 
@@ -57,7 +58,12 @@ async def query(req: QueryRequest):
     return QueryResponse(
         sql=state.get("sql", ""),
         result=state.get("result", ""),
-        explanation=f"SQL: {state.get('sql', '')}\n结果: {state.get('result', '')}")
+        insight=state.get("insight", ""),
+        explanation=(
+            f"SQL: {state.get('sql', '')}\n"
+            f"结果: {state.get('result', '')}\n"
+            f"洞察: {state.get('insight', '')}"
+        ))
 
 
 @app.post("/query/stream")
@@ -76,6 +82,7 @@ async def query_stream(req: QueryRequest):
         payload = json.dumps({
             "sql": state.get("sql", ""),
             "result": state.get("result", ""),
+            "insight": state.get("insight", ""),
         }, ensure_ascii=False)
         yield f"data: {payload}\n\n"
         yield "event: done\ndata: {}\n\n"
