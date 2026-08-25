@@ -6,7 +6,10 @@
   <strong>面向数仓场景的 NL-to-Insight Agent</strong>
 </p>
 <p>
-  自然语言 → SQL 生成 → 执行 → 数据洞察 &nbsp;|&nbsp; LangGraph Agent &nbsp;|&nbsp; MCP Server &nbsp;|&nbsp; RAG 检索 &nbsp;|&nbsp; SQLGlot 校验 &nbsp;|&nbsp; Langfuse 可观测
+  自然语言 → SQL 生成 → 执行 → 数据洞察
+</p>
+<p>
+  LangGraph Agent &nbsp;|&nbsp; MCP Server &nbsp;|&nbsp; RAG 检索 &nbsp;|&nbsp; SQLGlot 校验 &nbsp;|&nbsp; Langfuse 可观测
 </p>
 
 <p>
