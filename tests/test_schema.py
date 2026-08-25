@@ -1,5 +1,5 @@
 """Schema 注册表测试。"""
-from dataagent.warehouse.schema import TABLES, LINEAGE, METRICS, TableSpec
+from nl2insight.warehouse.schema import TABLES, LINEAGE, METRICS, TableSpec
 
 
 def test_exactly_30_tables():

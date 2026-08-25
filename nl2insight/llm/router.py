@@ -8,7 +8,7 @@ import os
 
 from langchain_core.language_models import BaseChatModel
 
-from dataagent.config import Settings
+from nl2insight.config import Settings
 
 
 class LLMRouter:

@@ -2,7 +2,7 @@
 import os
 import pytest
 import yaml
-from dataagent.config import ConfigError, load_config, Settings
+from nl2insight.config import ConfigError, load_config, Settings
 
 
 def test_load_defaults_when_file_missing(tmp_path, monkeypatch):

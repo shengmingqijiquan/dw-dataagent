@@ -1,5 +1,5 @@
 """RRF 融合纯函数测试。"""
-from dataagent.rag.retriever import rrf_merge
+from nl2insight.rag.retriever import rrf_merge
 
 
 def test_rrf_merges_two_lists():

@@ -9,7 +9,7 @@ from pymilvus import (
 )
 from sentence_transformers import SentenceTransformer
 
-from dataagent.rag.cases import Case
+from nl2insight.rag.cases import Case
 
 EMBEDDING_MODEL = "BAAI/bge-large-zh-v1.5"
 DIM = 1024

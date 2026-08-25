@@ -1,7 +1,7 @@
-"""CLI 入口：python -m dataagent.cli "需求" [--role data_analyst]"""
+"""CLI 入口：python -m nl2insight.cli "需求" [--role data_analyst]"""
 import argparse
 
-from dataagent.agent.graph import run_agent
+from nl2insight.agent.graph import run_agent
 
 
 def main():

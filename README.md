@@ -1,7 +1,7 @@
 <div align="center">
 
 <p>中文 | <a href="./README_EN.md">English</a></p>
-<h1>dw-dataagent</h1>
+<h1>dw-nl2insight</h1>
 <p>
   <strong>面向数仓取数场景的生产级 DataAgent</strong>
 </p>
@@ -32,7 +32,7 @@
 
 ## 📖 项目简介
 
-**dw-dataagent** 是一个面向数仓取数场景的生产级 DataAgent 服务。它将自然语言需求转化为可执行的 SQL，经过多步 Agent 推理、RAG 案例检索、规则校验与 Critic 审查后，最终在 StarRocks（或 DuckDB）上执行并返回带解释的分析结果。
+**dw-nl2insight** 是一个面向数仓取数场景的生产级 DataAgent 服务。它将自然语言需求转化为可执行的 SQL，经过多步 Agent 推理、RAG 案例检索、规则校验与 Critic 审查后，最终在 StarRocks（或 DuckDB）上执行并返回带解释的分析结果。
 
 项目全面对标主流互联网企业的 AI 数据应用生产实践，涵盖 **模型路由、元数据 MCP 服务化、表级 RBAC 权限、双层 SQL 护栏、全链路 Langfuse 追踪** 等核心生产要素。
 
@@ -96,7 +96,7 @@
 
 ```bash
 # 1. 克隆并安装依赖
-git clone <repo-url> && cd dw-dataagent
+git clone <repo-url> && cd dw-nl2insight
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
@@ -116,8 +116,8 @@ python scripts/build_rag_index.py
 # HF_ENDPOINT=https://hf-mirror.com python scripts/build_rag_index.py
 
 # 6. 启动服务（两个终端）
-python -m dataagent.mcp_server.server --port 8001   # MCP Server
-python -m dataagent.api --port 8000                   # Agent Service
+python -m nl2insight.mcp_server.server --port 8001   # MCP Server
+python -m nl2insight.api --port 8000                   # Agent Service
 
 # 7. 调用接口
 curl -X POST http://localhost:8000/query \
@@ -138,7 +138,7 @@ pytest tests/test_executor.py
 pytest tests/test_executor.py::test_duckdb_execute
 
 # 带覆盖率
-pytest tests/ --cov=dataagent --cov-report=term-missing
+pytest tests/ --cov=nl2insight --cov-report=term-missing
 
 # 跑 Golden Set 评测
 python scripts/run_evals.py

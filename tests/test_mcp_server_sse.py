@@ -1,4 +1,4 @@
-"""MCP SSE 服务集成测试（需手动启动服务：uvicorn dataagent.mcp_server.server:app --port 8001）。"""
+"""MCP SSE 服务集成测试（需手动启动服务：uvicorn nl2insight.mcp_server.server:app --port 8001）。"""
 import json
 import pytest
 from langchain_mcp_adapters.client import MultiServerMCPClient

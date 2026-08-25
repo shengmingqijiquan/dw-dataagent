@@ -1,11 +1,11 @@
-# dw-dataagent 设计文档
+# dw-nl2insight 设计文档
 
 > 版本：v3.0 | 2026-08-23
 > v3.0 变更：对标生产环境——StarRocks 执行引擎 / MCP SSE 服务化 / Agent FastAPI 服务 / 表级权限 / Langfuse 全程可观测 / pytest
 
 ## 1. 项目定位与命名
 
-**项目名**：`dw-dataagent`（数仓取数 DataAgent）
+**项目名**：`dw-nl2insight`（数仓取数 DataAgent）
 
 **一句话定位**：面向数仓取数场景的生产级 DataAgent 服务——自然语言需求 → 多步 Agent 推理 → 生成并执行 SQL → 返回可解释结果，全程可观测、可评测、可审计。
 
@@ -215,7 +215,7 @@ llm:
 ### Day 2：MCP Server 开发（SSE 服务化 + 权限）
 
 **任务**：
-1. `dataagent/mcp_server/metadata_server.py`：4 个工具（table_list/table_schema/lineage/metric_definition）
+1. `nl2insight/mcp_server/metadata_server.py`：4 个工具（table_list/table_schema/lineage/metric_definition）
 2. **权限过滤**：工具调用携带用户角色，按 roles.yaml 过滤返回
 3. **SSE 服务化**：FastAPI 挂载 MCP SSE 端点（`/mcp/sse`）
 4. pytest 单测：4 个工具的正确性 + 权限过滤边界（越权表不可见）
@@ -225,7 +225,7 @@ llm:
 ### Day 3：RAG 案例库构建
 
 **任务**：
-1. `dataagent/rag/cases.py` + `indexer.py`：BGE-large-zh Embedding + Milvus 入库
+1. `nl2insight/rag/cases.py` + `indexer.py`：BGE-large-zh Embedding + Milvus 入库
 2. 案例分块：需求+SQL 配对整条入库（语义完整单元）
 3. `scripts/build_rag_index.py`
 4. pytest：入库数量、向量维度正确
@@ -235,7 +235,7 @@ llm:
 ### Day 4：混合检索 + Rerank
 
 **任务**：
-1. `dataagent/rag/retriever.py`：向量 ANN + BM25（Milvus 原生）+ RRF 融合
+1. `nl2insight/rag/retriever.py`：向量 ANN + BM25（Milvus 原生）+ RRF 融合
 2. Rerank 加分项：bge-reranker-v2-m3
 3. 检索质量评估：10 条测试需求，Top-5 相关性人工评分
 
@@ -244,10 +244,10 @@ llm:
 ### Day 5：LangGraph Agent 核心 + 服务化
 
 **任务**：
-1. `dataagent/agent/state.py` + `prompts.py` + `graph.py`
+1. `nl2insight/agent/state.py` + `prompts.py` + `graph.py`
 2. 节点：parse → 工具调用循环（MCP + RAG）→ generate → validate → execute
 3. `langchain-mcp-adapters` 通过 SSE 客户端加载 MCP 工具
-4. `dataagent/llm/router.py` 模型路由
+4. `nl2insight/llm/router.py` 模型路由
 5. **Langfuse 集成**：每个节点 Trace + Token 统计
 6. **FastAPI 服务**：POST /query + SSE 流式接口 + Dockerfile
 7. 跑通首条取数需求
@@ -257,8 +257,8 @@ llm:
 ### Day 6：护栏体系
 
 **任务**：
-1. `dataagent/guardrails/sql_validator.py`（SQLGlot）：语法/表存在/分区/命名/只读/权限内表
-2. `dataagent/guardrails/critic.py`：LLM 审查（口径一致性、JOIN 合理性）
+1. `nl2insight/guardrails/sql_validator.py`（SQLGlot）：语法/表存在/分区/命名/只读/权限内表
+2. `nl2insight/guardrails/critic.py`：LLM 审查（口径一致性、JOIN 合理性）
 3. 状态机约束：每阶段工具白名单
 4. 停止条件：最大步数、重试上限
 5. pytest：非法 SQL（错误表名/DROP/越权表/缺分区）100% 拦截

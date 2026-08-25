@@ -14,11 +14,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import yaml
 
-from dataagent.agent.graph import build_agent, run_agent
-from dataagent.config import load_config
-from dataagent.executor.duckdb_executor import DuckDBExecutor
-from dataagent.guardrails.sql_validator import validate_sql
-from dataagent.warehouse.schema import TABLES
+from nl2insight.agent.graph import build_agent, run_agent
+from nl2insight.config import load_config
+from nl2insight.executor.duckdb_executor import DuckDBExecutor
+from nl2insight.guardrails.sql_validator import validate_sql
+from nl2insight.warehouse.schema import TABLES
 
 
 def load_golden_set(path: str = "evals/golden_set.yaml") -> list[dict]:

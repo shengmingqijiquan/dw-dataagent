@@ -1,7 +1,7 @@
 """DuckDB 执行器（开发兜底，零内存开销）。"""
 import duckdb
-from dataagent.executor.base import QueryError
-from dataagent.warehouse.schema import TableSpec
+from nl2insight.executor.base import QueryError
+from nl2insight.warehouse.schema import TableSpec
 
 
 class DuckDBExecutor:

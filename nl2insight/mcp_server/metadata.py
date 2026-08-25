@@ -3,8 +3,8 @@
 生产对标：此模块对应元数据中心（DataHub/Atlas/自研）的 API 封装；
 MCP Server 只是它的协议暴露层，对接真实元数据中心时此层签名不变。
 """
-from dataagent.warehouse.schema import TABLES, LINEAGE, METRICS
-from dataagent.permissions import filter_tables_by_role
+from nl2insight.warehouse.schema import TABLES, LINEAGE, METRICS
+from nl2insight.permissions import filter_tables_by_role
 
 
 class TableNotFoundError(Exception):

@@ -3,7 +3,7 @@
 生产对标：对应大厂数据权限中心（如 DataWorks 的 RBAC 模型）。
 核心原则：无权限的表在元数据检索层完全不可见——从源头消除越权取数可能。
 """
-from dataagent.warehouse.schema import TableSpec
+from nl2insight.warehouse.schema import TableSpec
 
 ROLES: dict[str, list[str]] = {
     "data_analyst": ["订单域", "用户域", "商品域"],

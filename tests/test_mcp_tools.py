@@ -1,6 +1,6 @@
 """MCP 元数据查询函数测试（含权限过滤）。"""
 import pytest
-from dataagent.mcp_server.metadata import (
+from nl2insight.mcp_server.metadata import (
     query_table_list, query_table_schema, query_lineage,
     query_metric_definition, TableNotFoundError,
 )

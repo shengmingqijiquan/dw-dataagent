@@ -1,5 +1,5 @@
 """案例库加载测试。"""
-from dataagent.rag.cases import load_cases
+from nl2insight.rag.cases import load_cases
 
 
 def test_loads_50_cases():
@@ -15,7 +15,7 @@ def test_case_fields_complete():
 
 
 def test_case_sql_references_registered_tables():
-    from dataagent.warehouse.schema import TABLES
+    from nl2insight.warehouse.schema import TABLES
     for c in load_cases():
         for t in c.tables:
             assert t in TABLES, f"{c.id}: {t} 不在注册表"

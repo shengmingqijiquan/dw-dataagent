@@ -1,6 +1,6 @@
 """索引构建单元测试（不依赖 Milvus）。"""
-from dataagent.rag.indexer import build_documents
-from dataagent.rag.cases import load_cases
+from nl2insight.rag.indexer import build_documents
+from nl2insight.rag.cases import load_cases
 
 
 def test_build_documents_count():

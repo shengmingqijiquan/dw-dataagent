@@ -12,11 +12,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from dataagent.agent.graph import build_agent, _invoke
-from dataagent.config import load_config
-from dataagent.observability import get_langfuse_handler
+from nl2insight.agent.graph import build_agent, _invoke
+from nl2insight.config import load_config
+from nl2insight.observability import get_langfuse_handler
 
-app = FastAPI(title="dw-dataagent", version="1.0.0")
+app = FastAPI(title="nl2insight", version="1.0.0")
 settings = load_config()
 _agent = build_agent(settings)
 logger = logging.getLogger(__name__)

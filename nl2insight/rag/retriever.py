@@ -7,8 +7,8 @@ from collections import defaultdict
 
 from pymilvus import Collection, connections
 
-from dataagent.rag.cases import Case, load_cases
-from dataagent.rag.indexer import get_embedder
+from nl2insight.rag.cases import Case, load_cases
+from nl2insight.rag.indexer import get_embedder
 
 
 def rrf_merge(ranked_lists: list[list[str]], k: int = 60) -> list[str]:

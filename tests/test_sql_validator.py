@@ -1,5 +1,5 @@
 """SQL 规则校验测试。"""
-from dataagent.guardrails.sql_validator import validate_sql
+from nl2insight.guardrails.sql_validator import validate_sql
 
 
 def test_valid_select_passes():

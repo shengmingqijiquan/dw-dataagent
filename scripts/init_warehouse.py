@@ -18,10 +18,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dataagent.config import load_config
-from dataagent.executor.duckdb_executor import DuckDBExecutor
-from dataagent.executor.starrocks_executor import StarRocksExecutor
-from dataagent.warehouse.schema import TABLES, generate_metadata_yaml
+from nl2insight.config import load_config
+from nl2insight.executor.duckdb_executor import DuckDBExecutor
+from nl2insight.executor.starrocks_executor import StarRocksExecutor
+from nl2insight.warehouse.schema import TABLES, generate_metadata_yaml
 
 DAYS = 90
 END_DATE = date(2026, 7, 31)

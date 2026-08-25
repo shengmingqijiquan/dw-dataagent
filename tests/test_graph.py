@@ -1,9 +1,9 @@
 """LangGraph 图结构测试（不调真实 LLM）。"""
 import asyncio
 
-from dataagent.agent import graph as graph_module
-from dataagent.agent.graph import build_agent
-from dataagent.config import load_config
+from nl2insight.agent import graph as graph_module
+from nl2insight.agent.graph import build_agent
+from nl2insight.config import load_config
 
 
 def test_graph_has_all_nodes():

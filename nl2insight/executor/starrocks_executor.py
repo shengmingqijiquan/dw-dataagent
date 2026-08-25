@@ -12,8 +12,8 @@ DML/DDL 在引擎层即被拒绝；代码侧的关键字前缀拦截只是纵深
 真正的 SQL 语义防线在上游 SQLGlot 规则校验。
 """
 import pymysql
-from dataagent.executor.base import QueryError
-from dataagent.warehouse.schema import TableSpec
+from nl2insight.executor.base import QueryError
+from nl2insight.warehouse.schema import TableSpec
 
 
 class StarRocksExecutor:

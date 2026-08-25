@@ -1,8 +1,8 @@
 """DuckDB Executor 测试。"""
 import pytest
-from dataagent.executor.duckdb_executor import DuckDBExecutor
-from dataagent.executor.base import QueryError
-from dataagent.warehouse.schema import TABLES
+from nl2insight.executor.duckdb_executor import DuckDBExecutor
+from nl2insight.executor.base import QueryError
+from nl2insight.warehouse.schema import TABLES
 
 
 @pytest.fixture

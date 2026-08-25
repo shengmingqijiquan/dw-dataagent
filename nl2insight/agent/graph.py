@@ -11,16 +11,16 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
-from dataagent.agent.prompts import GENERATE_PROMPT, PARSE_PROMPT, CRITIC_PROMPT
-from dataagent.agent.state import DWState
-from dataagent.config import Settings, load_config
-from dataagent.executor.base import QueryError
-from dataagent.executor.duckdb_executor import DuckDBExecutor
-from dataagent.executor.starrocks_executor import StarRocksExecutor
-from dataagent.guardrails.sql_validator import validate_sql
-from dataagent.llm.router import LLMRouter
-from dataagent.rag.retriever import HybridRetriever
-from dataagent.warehouse.schema import TABLES
+from nl2insight.agent.prompts import GENERATE_PROMPT, PARSE_PROMPT, CRITIC_PROMPT
+from nl2insight.agent.state import DWState
+from nl2insight.config import Settings, load_config
+from nl2insight.executor.base import QueryError
+from nl2insight.executor.duckdb_executor import DuckDBExecutor
+from nl2insight.executor.starrocks_executor import StarRocksExecutor
+from nl2insight.guardrails.sql_validator import validate_sql
+from nl2insight.llm.router import LLMRouter
+from nl2insight.rag.retriever import HybridRetriever
+from nl2insight.warehouse.schema import TABLES
 
 MAX_GENERATE_ATTEMPTS = 2
 MAX_EXECUTE_ATTEMPTS = 2

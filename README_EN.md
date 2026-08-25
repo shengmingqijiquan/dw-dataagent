@@ -1,7 +1,7 @@
 <div align="center">
 
 <p><a href="./README.md">中文</a> | English</p>
-<h1>dw-dataagent</h1>
+<h1>dw-nl2insight</h1>
 <p>
   <strong>A Production-Grade DataAgent for Data Warehouse Querying</strong>
 </p>
@@ -32,7 +32,7 @@
 
 ## 📖 Project Overview
 
-**dw-dataagent** is a production-grade DataAgent service for data warehouse querying scenarios. It transforms natural language requests into executable SQL through multi-step Agent reasoning, RAG case retrieval, rule validation, and Critic review, finally executing on StarRocks (or DuckDB) and returning explainable analysis results.
+**dw-nl2insight** is a production-grade DataAgent service for data warehouse querying scenarios. It transforms natural language requests into executable SQL through multi-step Agent reasoning, RAG case retrieval, rule validation, and Critic review, finally executing on StarRocks (or DuckDB) and returning explainable analysis results.
 
 The project aligns with mainstream AI data application production practices, covering **model routing, MCP service deployment, table-level RBAC permissions, dual-layer SQL guardrails, and full-link Langfuse tracing** — core production requirements.
 
@@ -97,7 +97,7 @@ Business caller (Web/BI/IM bot)
 
 ```bash
 # 1. Clone and install dependencies
-git clone <repo-url> && cd dw-dataagent
+git clone <repo-url> && cd dw-nl2insight
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
@@ -117,8 +117,8 @@ python scripts/build_rag_index.py
 # HF_ENDPOINT=https://hf-mirror.com python scripts/build_rag_index.py
 
 # 6. Start services (two terminals)
-python -m dataagent.mcp_server.server --port 8001   # MCP Server
-python -m dataagent.api --port 8000                   # Agent Service
+python -m nl2insight.mcp_server.server --port 8001   # MCP Server
+python -m nl2insight.api --port 8000                   # Agent Service
 
 # 7. Call the query API
 curl -X POST http://localhost:8000/query \
@@ -139,7 +139,7 @@ pytest tests/test_executor.py
 pytest tests/test_executor.py::test_duckdb_execute
 
 # With coverage
-pytest tests/ --cov=dataagent --cov-report=term-missing
+pytest tests/ --cov=nl2insight --cov-report=term-missing
 
 # Run Golden Set evaluation
 python scripts/run_evals.py

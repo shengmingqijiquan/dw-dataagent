@@ -1,7 +1,7 @@
 """MCP Server 服务化：SSE 模式挂载 FastAPI，供 Agent 远程调用。
 
 生产对标：SSE 支持多客户端远程访问，是企业 MCP 标准部署形态；
-stdio 仅本地 CLI 调试用（`mcp run dataagent.mcp_server.server:mcp`）。
+stdio 仅本地 CLI 调试用（`mcp run nl2insight.mcp_server.server:mcp`）。
 """
 import contextvars
 import starlette.requests
@@ -12,11 +12,11 @@ from starlette.applications import Starlette
 from starlette.responses import Response
 from starlette.routing import Mount, Route
 
-from dataagent.mcp_server.metadata import (
+from nl2insight.mcp_server.metadata import (
     query_table_list, query_table_schema, query_lineage,
     query_metric_definition, TableNotFoundError,
 )
-from dataagent.permissions import resolve_role
+from nl2insight.permissions import resolve_role
 
 mcp = Server("dw-metadata-server")
 

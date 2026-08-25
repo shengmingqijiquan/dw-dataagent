@@ -1,8 +1,8 @@
 """模型路由测试（不真正调 API，只验证路由逻辑与降级）。"""
 import yaml
 import pytest
-from dataagent.config import load_config
-from dataagent.llm.router import LLMRouter
+from nl2insight.config import load_config
+from nl2insight.llm.router import LLMRouter
 
 
 @pytest.fixture

@@ -1,8 +1,8 @@
 """StarRocks Executor 无连接测试（只读护栏与未初始化路径，无需真实服务）。"""
 import pytest
-from dataagent.executor.base import QueryError
-from dataagent.executor.starrocks_executor import StarRocksExecutor
-from dataagent.warehouse.schema import TABLES
+from nl2insight.executor.base import QueryError
+from nl2insight.executor.starrocks_executor import StarRocksExecutor
+from nl2insight.warehouse.schema import TABLES
 
 
 def _executor():

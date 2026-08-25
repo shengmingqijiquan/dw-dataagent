@@ -1,8 +1,8 @@
 """RBAC 权限过滤测试。"""
-from dataagent.permissions import (
+from nl2insight.permissions import (
     DEFAULT_ROLE, ROLES, filter_tables_by_role, resolve_role,
 )
-from dataagent.warehouse.schema import TABLES
+from nl2insight.warehouse.schema import TABLES
 
 
 def test_analyst_sees_three_domains():

@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 import sqlglot
 from sqlglot import exp
 
-from dataagent.permissions import filter_tables_by_role
-from dataagent.warehouse.schema import TABLES
+from nl2insight.permissions import filter_tables_by_role
+from nl2insight.warehouse.schema import TABLES
 
 
 @dataclass
