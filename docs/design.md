@@ -5,13 +5,13 @@
 
 ## 1. 项目定位与命名
 
-**项目名**：`nl2insight`（数仓取数 DataAgent）
+**项目名**：`nl2insight`（NL-to-Insight 智能分析 Agent）
 
-**一句话定位**：面向数仓取数场景的生产级 DataAgent 服务——自然语言需求 → 多步 Agent 推理 → 生成并执行 SQL → 返回可解释结果，全程可观测、可评测、可审计。
+**一句话定位**：面向数仓场景的 NL-to-Insight Agent 服务——自然语言需求 → 多步 Agent 推理 → SQL 生成与执行 → 数据洞察，全程可观测、可评测、可审计。
 
 **项目背景**：
 
-> 业务取数需求是数仓团队最高频的场景。本项目设计并实现了一个生产级 DataAgent 服务：LangGraph 做 Agent 循环，MCP SSE 模式标准化接入元数据服务（含表级权限过滤），Milvus 支撑 RAG 检索历史 SQL 案例，模型路由层做成本与合规控制，四层校验保障 SQL 质量，StarRocks 执行真实 OLAP 查询，Langfuse 全程 Trace 可观测，Golden Set 驱动迭代。
+> 业务取数需求是数仓团队最高频的场景。本项目设计并实现了一个生产级 NL-to-Insight Agent 服务：LangGraph 做 Agent 循环，MCP SSE 模式标准化接入元数据服务（含表级权限过滤），Milvus 支撑 RAG 检索历史 SQL 案例，模型路由层做成本与合规控制，四层校验保障 SQL 质量，StarRocks 执行真实 OLAP 查询，Langfuse 全程 Trace 可观测，Golden Set 驱动迭代。
 
 **成功标准**：
 

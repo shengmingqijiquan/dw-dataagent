@@ -3,10 +3,10 @@
 <p>中文 | <a href="./README_EN.md">English</a></p>
 <h1>nl2insight</h1>
 <p>
-  <strong>面向数仓取数场景的生产级 DataAgent</strong>
+  <strong>面向数仓场景的 NL-to-Insight Agent</strong>
 </p>
 <p>
-  Text-to-SQL &nbsp;|&nbsp; LangGraph Agent &nbsp;|&nbsp; MCP Server &nbsp;|&nbsp; RAG 检索 &nbsp;|&nbsp; SQLGlot 校验 &nbsp;|&nbsp; Langfuse 可观测
+  自然语言 → SQL 生成 → 执行 → 数据洞察 &nbsp;|&nbsp; LangGraph Agent &nbsp;|&nbsp; MCP Server &nbsp;|&nbsp; RAG 检索 &nbsp;|&nbsp; SQLGlot 校验 &nbsp;|&nbsp; Langfuse 可观测
 </p>
 
 <p>
@@ -32,7 +32,7 @@
 
 ## 📖 项目简介
 
-**nl2insight** 是一个面向数仓取数场景的生产级 DataAgent 服务。它将自然语言需求转化为可执行的 SQL，经过多步 Agent 推理、RAG 案例检索、规则校验与 Critic 审查后，最终在 StarRocks（或 DuckDB）上执行并返回带解释的分析结果。
+**nl2insight** 是一个面向数仓场景的 NL-to-Insight Agent 服务。它将自然语言需求转化为可执行的 SQL，经过多步 Agent 推理、RAG 案例检索、规则校验与 Critic 审查后，最终在 StarRocks（或 DuckDB）上执行，并返回带解释的数据洞察结果。
 
 项目全面对标主流互联网企业的 AI 数据应用生产实践，涵盖 **模型路由、元数据 MCP 服务化、表级 RBAC 权限、双层 SQL 护栏、全链路 Langfuse 追踪** 等核心生产要素。
 
