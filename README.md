@@ -191,10 +191,10 @@ python scripts/run_evals.py
 
 ## 💬 关注公众号
 
-欢迎关注公众号「六八智道」，获取 AI 数据分析 Agent 的设计实践与更多技术分享。
+欢迎关注公众号「六八智道」，获取企业 Data+AI 落地实践与更多技术分享。
 
 <div align="center">
-  <img src="assets/wechat_qrcode.png" alt="公众号二维码" width="200" />
+  <img src="assets/wechat_qrcode.jpg" alt="公众号二维码" width="200" />
 </div>
 
 ---
