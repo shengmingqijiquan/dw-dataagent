@@ -192,7 +192,7 @@ This project is open-sourced under the [MIT License](LICENSE).
 
 ## 💬 Follow Our WeChat Official Account
 
-Follow our official account **「六八智谱」** for more AI data analysis Agent design practices and technical sharing.
+Follow our official account **「六八智道」** for more AI data analysis Agent design practices and technical sharing.
 
 <div align="center">
   <img src="assets/wechat_qrcode.png" alt="WeChat Official Account QR Code" width="200" />
