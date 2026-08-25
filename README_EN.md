@@ -6,7 +6,10 @@
   <strong>A Production-Grade NL-to-Insight Agent for Data Warehouses</strong>
 </p>
 <p>
-  Natural Language → SQL Generation → Execution → Data Insights &nbsp;|&nbsp; LangGraph Agent &nbsp;|&nbsp; MCP Server &nbsp;|&nbsp; RAG Retrieval &nbsp;|&nbsp; SQLGlot Validation &nbsp;|&nbsp; Langfuse Observability
+  Natural Language → SQL Generation → Execution → Data Insights
+</p>
+<p>
+  LangGraph Agent &nbsp;|&nbsp; MCP Server &nbsp;|&nbsp; RAG Retrieval &nbsp;|&nbsp; SQLGlot Validation &nbsp;|&nbsp; Langfuse Observability
 </p>
 
 <p>
